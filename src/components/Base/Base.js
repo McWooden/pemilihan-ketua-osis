@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { verifiedAccount } from '../../utils'
 import Dashboard from './dashboard/Dashboard'
 import { useEffect } from 'react'
@@ -8,12 +8,16 @@ export default function Base() {
     const account = useSelector(state => state.source.account)
 
     const navigate = useNavigate()
+    const location = useLocation()
+
     useEffect(() => {
         if (!verifiedAccount()) return navigate('/login')
     },[account, navigate])
 
+    const drawerList = ['dashboard', 'form', 'cari', 'rekap']
+
     return <div className="drawer lg:drawer-open height-fill-avaible">
-            <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
+            <input id="my-drawer-2" type="checkbox" className="drawer-toggle"/>
             <div className="drawer-content flex flex-col">
                 <div className="navbar flex gap-2 bg-base-100">
                     <div className="flex-none">
@@ -32,16 +36,21 @@ export default function Base() {
                     <Routes>
                         <Route path='/' Component={Dashboard}/>
                         <Route path='/dashboard' Component={Dashboard}/>
+                        <Route path='/form' Component={Dashboard}/>
+                        <Route path='/search' Component={Dashboard}/>
+                        <Route path='/recap' Component={Dashboard}/>
                     </Routes>
                 </div>
             </div> 
             <div className="drawer-side">
                 <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label> 
                 <ul className="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-                    <li><p onClick={() => navigate('/dashboard')}>Dashboard</p></li>
-                    <li><p onClick={() => navigate('/form')}>Form</p></li>
-                    <li><p onClick={() => navigate('/search')}>Cari</p></li>
-                    <li><p onClick={() => navigate('/recap')}>Laporan Rekap</p></li>
+                    {drawerList.map(list => (
+                        <li key={list}><p onClick={() => {
+                            navigate('/' + list)
+                            document.getElementById('my-drawer-2').checked = false
+                        }} className={`capitalize ${location.pathname === '/' + list && 'active'}`}>{list}</p></li>
+                    ))}
                 </ul>
             </div>
         </div>
