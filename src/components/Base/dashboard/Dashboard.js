@@ -9,7 +9,7 @@ export default function Dashboard() {
             <div className="mockup-browser-toolbar">
                 <div className="input">https://mcwooden.com</div>
             </div>
-            <div className="flex justify-center px-4 py-16 bg-base-200">Selamat datang!</div>
+            <div className="flex justify-center px-4 py-16 bg-base-200">Selamat datang di dashboard calon pemilihan ketua osis!</div>
         </div>
         <button className="btn" onClick={() => {
             setLocalStorage('account', {})
