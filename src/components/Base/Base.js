@@ -26,13 +26,13 @@ export default function Base() {
                         </label>
                     </div>
                     <div className="flex-1">
-                        <p className="text-xl">nama Aplikasi</p>
+                        <p className="text-xl">Osis</p>
                     </div>
                     <div className="navbar-end">
                         <p className="btn">Logout</p>
                     </div>
                 </div>
-                <div className='flex-1 p-2'>
+                <div className='flex-1 p-4'>
                     <Routes>
                         <Route path='/' Component={Dashboard}/>
                         <Route path='/dashboard' Component={Dashboard}/>
@@ -44,14 +44,19 @@ export default function Base() {
             </div> 
             <div className="drawer-side">
                 <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label> 
-                <ul className="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-                    {drawerList.map(list => (
-                        <li key={list}><p onClick={() => {
-                            navigate('/' + list)
-                            document.getElementById('my-drawer-2').checked = false
-                        }} className={`capitalize ${location.pathname === '/' + list && 'active'}`}>{list}</p></li>
-                    ))}
-                </ul>
+                <div className='menu p-4 w-80 min-h-full bg-base-200  text-base-content'>
+                    <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay btn btn-square ml-auto btn-outline">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </label> 
+                    <ul className='mt-2'>
+                        {drawerList.map(list => (
+                            <li key={list}><p onClick={() => {
+                                navigate('/' + list)
+                                document.getElementById('my-drawer-2').checked = false
+                            }} className={`capitalize ${((location.pathname === '/' + list) || (location.pathname === '/' && list === 'dashboard')) && 'active'}`}>{list}</p></li>
+                        ))}
+                    </ul>
+                </div>
             </div>
         </div>
 }
