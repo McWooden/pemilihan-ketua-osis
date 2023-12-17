@@ -1,6 +1,10 @@
+import Hero from "./Hero"
+import Stat from "./Stat"
 
 export default function Dashboard() {
-    return <div className="h-full">
-        <p>Halooooooo</p>
+
+    return <div className="h-full flex flex-col gap-2">
+        <Hero/>
+        <Stat/>
     </div>
 }
