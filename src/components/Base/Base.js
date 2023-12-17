@@ -14,7 +14,7 @@ export default function Base() {
         if (!verifiedAccount()) return navigate('/login')
     },[account, navigate])
 
-    const drawerList = ['dashboard', 'form', 'cari', 'rekap', 'admin']
+    const drawerList = ['dashboard', 'cari', 'form', 'rekap', 'admin']
 
     return <div className="drawer lg:drawer-open height-fill-avaible">
             <input id="my-drawer-2" type="checkbox" className="drawer-toggle"/>
@@ -37,8 +37,8 @@ export default function Base() {
                         <Route path='/' Component={Dashboard}/>
                         <Route path='/dashboard' Component={Dashboard}/>
                         <Route path='/form' Component={Dashboard}/>
-                        <Route path='/search' Component={Dashboard}/>
-                        <Route path='/recap' Component={Dashboard}/>
+                        <Route path='/cari' Component={Dashboard}/>
+                        <Route path='/rekap' Component={Dashboard}/>
                         <Route path='/admin' Component={Dashboard}/>
                     </Routes>
                 </div>
