@@ -3,6 +3,8 @@ import { verifiedAccount } from '../../utils'
 import Dashboard from './dashboard/Dashboard'
 import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
+import Rekap from './Rekap'
+import Cari from './cari/Cari'
 
 export default function Base() {
     const account = useSelector(state => state.source.account)
@@ -19,7 +21,7 @@ export default function Base() {
     return <div className="drawer lg:drawer-open height-fill-avaible">
             <input id="my-drawer-2" type="checkbox" className="drawer-toggle"/>
             <div className="drawer-content flex flex-col">
-                <div className="navbar flex gap-2 bg-base-100">
+                <div className="navbar flex gap-2 z[1] sticky top-0 glass">
                     <div className="flex-none">
                         <label htmlFor="my-drawer-2" className="btn btn-square btn-ghost drawer-button lg:hidden">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-5 h-5 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -37,13 +39,13 @@ export default function Base() {
                         <Route path='/' Component={Dashboard}/>
                         <Route path='/dashboard' Component={Dashboard}/>
                         <Route path='/form' Component={Dashboard}/>
-                        <Route path='/cari' Component={Dashboard}/>
-                        <Route path='/rekap' Component={Dashboard}/>
+                        <Route path='/cari' Component={Cari}/>
+                        <Route path='/rekap' Component={Rekap}/>
                         <Route path='/admin' Component={Dashboard}/>
                     </Routes>
                 </div>
             </div> 
-            <div className="drawer-side">
+            <div className="drawer-side z-[1]">
                 <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label> 
                 <div className='menu p-4 w-80 min-h-full bg-base-200  text-base-content'>
                     <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay btn btn-square ml-auto btn-outline lg:hidden">

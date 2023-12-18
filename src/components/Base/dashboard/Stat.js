@@ -1,8 +1,10 @@
 import { FaRegAddressCard } from "react-icons/fa6";
 import { RiAdminLine } from "react-icons/ri";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 export default function Stat() {
+    const users = useSelector(state => state.source.users)
     const navigate = useNavigate()
     return <div className="stats shadow stats-vertical lg:stats-horizontal">
         <div className="stat">
@@ -10,7 +12,7 @@ export default function Stat() {
                 <FaRegAddressCard className="text-5xl"/>
             </div>
             <div className="stat-title">Total Ktp</div>
-            <div className="stat-value text-primary">25.6K</div>
+            <div className="stat-value text-primary">{users && users.length}</div>
             <button className="btn btn-primary" onClick={() => navigate('/rekap')}>Selengkapnya</button>
         </div>
         

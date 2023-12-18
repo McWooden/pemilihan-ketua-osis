@@ -74,7 +74,7 @@ const source = createSlice({
                 "agama": "HINDU",
                 "statusPerkawinan": "KAWIN",
                 "pekerjaan": "Dokter",
-                "kewarganegaraan": "WNI",
+                "kewarganegaraan": "ITAP",
                 "berlakuHingga": "2023-10-15",
                 "fotoKTP": {
                     "path": "/path/to/foto3.jpg",
@@ -124,7 +124,7 @@ const source = createSlice({
                 "agama": "KHONGHUCU",
                 "statusPerkawinan": "KAWIN",
                 "pekerjaan": "Guru",
-                "kewarganegaraan": "WNI",
+                "kewarganegaraan": "WNA",
                 "berlakuHingga": "2024-08-08",
                 "fotoKTP": {
                     "path": "/path/to/foto5.jpg",

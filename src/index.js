@@ -11,7 +11,7 @@ import Login from './components/login/Login';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <MyErrorBoundary>
       <Provider store={store}>
         <BrowserRouter>
@@ -22,7 +22,7 @@ root.render(
         </BrowserRouter>
       </Provider>
     </MyErrorBoundary>
-  </React.StrictMode>
+  // </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
