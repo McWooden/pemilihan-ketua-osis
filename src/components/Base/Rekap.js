@@ -1,14 +1,28 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FaRegAddressCard } from "react-icons/fa6";
-import { useSelector } from "react-redux";
-import SearchAndPlusButton from "../Utils/SearchAndPlusButton";
+import { useDispatch, useSelector } from "react-redux";
+import SearchAndPlusButton from "../utils/SearchAndPlusButton";
+import supabase from "../../config/supabaseClient";
+import { setUsers } from "../../redux/source";
+import ErrorAlert from "../utils/ErrorAlert";
+import { formatDate } from "../../utils";
 
 export default function Rekap() {
     const users = useSelector(state => state.source.users)
+    const [fetchError, setFetchError] = useState(false)
+    const dispatch = useDispatch()
+
+    const fetchUsers = useCallback(async () => {
+        setFetchError(false)
+        const {data, error} = await supabase.from('users').select('*')
+        if (error) return setFetchError(true)
+        console.log(data);
+        dispatch(setUsers(data))
+    },[dispatch])
 
     useEffect(() => {
-        console.log(users[0]);
-    },[users])
+        if (!users) fetchUsers()
+    },[fetchUsers, users])
 
     return  <div className="flex flex-col h-full gap-2">
         <div className="stats shadow w-full">
@@ -22,6 +36,7 @@ export default function Rekap() {
         </div>
         <SearchAndPlusButton/>
         <div className="overflow-x-auto flex-1">
+        {fetchError && <ErrorAlert text="Kesalahan!, gagal mendapatkan data, klik untuk menyegarkan" className="btn bg-error justify-start h-auto" cb={fetchUsers}/>}
             <table className="table">
                 {/* head */}
                 <thead>
@@ -33,7 +48,8 @@ export default function Rekap() {
                         <th>Jenis Kelamin</th>
                         <th>Gol. Darah</th>
                         <th>Alamat</th>
-                        <th>rtRw</th>
+                        <th>rt</th>
+                        <th>rw</th>
                         <th>Kelurahan/Desa</th>
                         <th>Kecamatan</th>
                         <th>Agama</th>
@@ -44,23 +60,24 @@ export default function Rekap() {
                     </tr>
                 </thead>
                 <tbody>
-                    {users?.map((user, i) => (
-                        <tr className="hover" key={user.NIK}>
-                            <th>{++i}</th>
-                            <td>{user.NIK}</td>
+                    {users?.map(user => (
+                        <tr className="hover" key={user.nik}>
+                            <th>{user.id}</th>
+                            <td>{user.nik}</td>
                             <td>{user.nama}</td>
-                            <td>{user.tempatTanggalLahir.tempat}, {user.tempatTanggalLahir.tanggalLahir}</td>
+                            <td>{user.tempatLahir}, {formatDate(user.tanggalLahir)}</td>
                             <td>{user.jenisKelamin}</td>
                             <td>{user.golonganDarah}</td>
-                            <td>{user.alamat.alamat}</td>
-                            <td>{user.alamat.rtRw}</td>
-                            <td>{user.alamat.kelurahanDesa}</td>
-                            <td>{user.alamat.kecamatan}</td>
+                            <td>{user.alamat}</td>
+                            <td>{user.rt}</td>
+                            <td>{user.rw}</td>
+                            <td>{user.kelurahanDesa}</td>
+                            <td>{user.kecamatan}</td>
                             <td>{user.agama}</td>
                             <td>{user.statusPerkawinan}</td>
                             <td>{user.pekerjaan}</td>
                             <td>{user.kewarganegaraan}</td>
-                            <td>{user.berlakuHingga}</td>
+                            <td>{formatDate(user.berlakuHingga)}</td>
                         </tr>
                     )) || []}
                 </tbody>

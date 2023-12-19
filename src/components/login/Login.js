@@ -11,7 +11,8 @@ export default function Login() {
 
     const dispatch = useDispatch()
     const navigate = useNavigate()
-    function LoginToMyAccount() {
+    function LoginToMyAccount(e) {
+        e.preventDefault()
         const input = {username, password}
         if (verifyAdmin(input)) {
             setLocalStorage('account', {username, password})
@@ -27,7 +28,7 @@ export default function Login() {
     }
 
     return <div className="h-screen grid place-content-center bg-primary p-2">
-        <div className="card flex flex-col gap-2 bg-base-100 card-body w-80 max-w-full">
+        <form className="card flex flex-col gap-2 bg-base-100 card-body w-80 max-w-full" onSubmit={LoginToMyAccount}>
             {showError &&
                 <div role="alert" className="alert alert-error max-w-xs">
                     <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -52,7 +53,7 @@ export default function Login() {
                     handleChange()
                 }}/>
             </label>
-            <button className="btn btn-accent" onClick={LoginToMyAccount}>Login</button>
-        </div>
+            <button type="submit" className="btn btn-accent">Login</button>
+        </form>
     </div>
 }

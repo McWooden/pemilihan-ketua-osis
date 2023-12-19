@@ -1,5 +1,9 @@
+import moment from "moment"
 import store from "./redux/store"
 
+export function formatDate(date) {
+  return moment(date).format('DD-MM-YYYY')
+}
 export function verifyAdmin(data) {
   return data.username === process.env.REACT_APP_USERNAME && data.password === process.env.REACT_APP_PASSWORD
 }
