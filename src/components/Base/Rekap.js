@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaRegAddressCard } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
-import SearchAndPlusButton from "../utilsComponent/SearchAndPlusButton";
+import SearchAndPlusButton from "../Utils/SearchAndPlusButton";
 import supabase from "../../config/supabaseClient";
 import { setUsers } from "../../redux/source";
-import ErrorAlert from "../utilsComponent/ErrorAlert";
+import ErrorAlert from "../Utils/ErrorAlert";
 import { formatDate } from "../../utils";
 
 export default function Rekap() {
@@ -16,7 +16,6 @@ export default function Rekap() {
         setFetchError(false)
         const {data, error} = await supabase.from('users').select('*')
         if (error) return setFetchError(true)
-        console.log(data);
         dispatch(setUsers(data))
     },[dispatch])
 
@@ -38,7 +37,6 @@ export default function Rekap() {
         <div className="overflow-x-auto flex-1">
         {fetchError && <ErrorAlert text="Kesalahan!, gagal mendapatkan data, klik untuk menyegarkan" className="btn bg-error justify-start h-auto" cb={fetchUsers}/>}
             <table className="table">
-                {/* head */}
                 <thead>
                     <tr>
                         <th></th>

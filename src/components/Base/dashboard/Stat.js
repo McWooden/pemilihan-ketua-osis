@@ -1,28 +1,88 @@
-import { FaRegAddressCard } from "react-icons/fa6";
-import { RiAdminLine } from "react-icons/ri";
-import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { FaRegAddressCard } from "react-icons/fa6"
+import { RiAdminLine } from "react-icons/ri"
+import { useDispatch, useSelector } from "react-redux"
+import { useNavigate } from "react-router-dom"
+import supabase from "../../../config/supabaseClient"
+import { setAdmins, setUsers } from "../../../redux/source"
+import { useCallback, useEffect, useState } from "react"
 
 export default function Stat() {
-    const users = useSelector(state => state.source.users)
+    return (
+        <div className="stats shadow stats-vertical lg:stats-horizontal">
+            <TotalKtp />
+            <TotalAdmin />
+        </div>
+    )
+}
+
+function TotalKtp() {
+    const users = useSelector((state) => state.source.users)
+    const [fetchError, setFetchError] = useState(false)
     const navigate = useNavigate()
-    return <div className="stats shadow stats-vertical lg:stats-horizontal">
+    const dispatch = useDispatch()
+
+    const fetchUsers = useCallback(async () => {
+        setFetchError(false)
+        const { data, error } = await supabase.from("users").select("*")
+        if (error) return setFetchError(true)
+        dispatch(setUsers(data))
+    }, [dispatch])
+
+    useEffect(() => {
+        if (!users) fetchUsers()
+    }, [fetchUsers, users])
+
+    return (
         <div className="stat">
             <div className="stat-figure text-primary">
-                <FaRegAddressCard className="text-5xl"/>
+                <FaRegAddressCard className="text-5xl" />
             </div>
             <div className="stat-title">Total Ktp</div>
-            <div className="stat-value text-primary">{users && users.length}</div>
-            <button className="btn btn-primary" onClick={() => navigate('/rekap')}>Selengkapnya</button>
+            <div className="stat-value text-primary">
+                {users && users.length}{" "}
+                {fetchError && <span className="bg-error px-2">Err</span>}
+            </div>
+            <button
+                className="btn btn-primary"
+                onClick={() => navigate("/rekap")}
+            >
+                Selengkapnya
+            </button>
         </div>
-        
+    )
+}
+
+function TotalAdmin() {
+    const users = useSelector((state) => state.source.admins)
+    const [fetchError, setFetchError] = useState(false)
+
+    const navigate = useNavigate()
+    const dispatch = useDispatch()
+
+    const fetchAdmins = useCallback(async () => {
+        setFetchError(false)
+        const { data, error } = await supabase.from("admins").select("username")
+        if (error) return setFetchError(true)
+        dispatch(setAdmins(data))
+    }, [dispatch])
+
+    useEffect(() => {
+        if (!users) fetchAdmins()
+    }, [fetchAdmins, users])
+
+    return (
         <div className="stat">
             <div className="stat-figure text-secondary">
-                <RiAdminLine className="text-5xl"/>
+                <RiAdminLine className="text-5xl" />
             </div>
             <div className="stat-title">Total admin</div>
-            <div className="stat-value text-secondary">2.6M</div>
-            <button className="btn btn-secondary" onClick={() => navigate('/admin')}>Kelola</button>
+            <div className="stat-value text-secondary">
+                {users && users.length}{" "}
+                {fetchError && <span className="bg-error px-2">Err</span>}
+            </div>
+            <button className="btn btn-secondary" onClick={() => navigate("/admin")}>
+                Kelola
+            </button>
         </div>
-    </div>
+    )
 }

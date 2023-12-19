@@ -1,35 +1,55 @@
 import { useDispatch } from "react-redux"
-import { setLocalStorage, verifyAdmin } from "../../utils"
+import { setLocalStorage } from "../../utils"
 import { setAccount } from "../../redux/source"
 import { useNavigate } from "react-router-dom"
 import { useState } from "react"
+import supabase from '../../config/supabaseClient'
 
 export default function Login() {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [showError, setShowError] = useState(false)
+    const [showTextError, setShowTextError] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
 
     const dispatch = useDispatch()
     const navigate = useNavigate()
-    function LoginToMyAccount(e) {
+    async function LoginToMyAccount(e) {
         e.preventDefault()
-        const input = {username, password}
-        if (verifyAdmin(input)) {
-            setLocalStorage('account', {username, password})
+        console.log('submit');
+        setIsLoading(true)
+        try {
+            let { data, error } = await supabase
+            .from('admins')
+            .select('username, password')
+            .eq('username', username)
+            .eq('password', password)
+            if (error) {
+                setIsLoading(false)
+                return setShowTextError(error.message)
+            } 
+            
+            if (!data.length) {
+                setShowTextError('Nama pengguna atau Kata sandi salah.')
+                setIsLoading(false)
+                return
+            }
+            
+            setLocalStorage('account', data[0])
             dispatch(setAccount())
             navigate('/')
-            return
+            setIsLoading(false)
+        } catch (error) {
+            setIsLoading(false)
         }
-        setShowError(true)
     }
 
     function handleChange() {
-        setShowError(false)
+        setShowTextError(false)
     }
 
     return <div className="h-screen grid place-content-center bg-primary p-2">
         <form className="card flex flex-col gap-2 bg-base-100 card-body w-80 max-w-full" onSubmit={LoginToMyAccount}>
-            {showError &&
+            {showTextError &&
                 <div role="alert" className="alert alert-error max-w-xs">
                     <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span>Error! Nama pengguna atau sandi salah.</span>
@@ -53,7 +73,7 @@ export default function Login() {
                     handleChange()
                 }}/>
             </label>
-            <button type="submit" className="btn btn-accent">Login</button>
+            <button type="submit" className="btn btn-accent">{isLoading ? <span className="loading loading-spinner loading-xs"></span> :'Login'}</button>
         </form>
     </div>
 }
