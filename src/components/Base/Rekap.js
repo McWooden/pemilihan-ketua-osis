@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaRegAddressCard } from "react-icons/fa6";
 import { useDispatch, useSelector } from "react-redux";
-import SearchAndPlusButton from "../utils/SearchAndPlusButton";
+import SearchAndPlusButton from "../utilsComponent/SearchAndPlusButton";
 import supabase from "../../config/supabaseClient";
 import { setUsers } from "../../redux/source";
-import ErrorAlert from "../utils/ErrorAlert";
+import ErrorAlert from "../utilsComponent/ErrorAlert";
 import { formatDate } from "../../utils";
 
 export default function Rekap() {
