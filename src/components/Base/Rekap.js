@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import SearchAndPlusButton from "../Utils/SearchAndPlusButton";
 import supabase from "../../config/supabaseClient";
 import { setUsers } from "../../redux/source";
-import ErrorAlert from "../Utils/ErrorAlert";
 import { formatDate } from "../../utils";
+import AlertError from "../Utils/AlertError";
 
 export default function Rekap() {
     const users = useSelector(state => state.source.users)
@@ -24,18 +24,21 @@ export default function Rekap() {
     },[fetchUsers, users])
 
     return  <div className="flex flex-col h-full gap-2">
-        <div className="stats shadow w-full">
-            <div className="stat w-full">
+        <div className="stats shadow">
+            <div className="stat">
                 <div className="stat-figure text-primary">
                     <FaRegAddressCard className="text-5xl"/>
                 </div>
                 <div className="stat-title">Total Ktp</div>
-                <div className="stat-value text-primary">{users && users.length}</div>
+                <div className="stat-value text-primary">
+                    {users && users.length}
+                    {fetchError && <span className="bg-error px-2">Err</span>}
+                </div>
             </div>
         </div>
         <SearchAndPlusButton/>
         <div className="overflow-x-auto flex-1">
-        {fetchError && <ErrorAlert text="Kesalahan!, gagal mendapatkan data, klik untuk menyegarkan" className="btn bg-error justify-start h-auto" cb={fetchUsers}/>}
+        {fetchError && <AlertError text="Kesalahan!, gagal mendapatkan data, klik untuk menyegarkan" className="btn bg-error justify-start h-auto" cb={fetchUsers}/>}
             <table className="table">
                 <thead>
                     <tr>

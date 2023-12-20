@@ -5,6 +5,8 @@ import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import Rekap from './Rekap'
 import Cari from './cari/Cari'
+import Admin from './admin/Admin'
+import Form from './form/Form'
 
 export default function Base() {
     const account = useSelector(state => state.source.account)
@@ -20,7 +22,7 @@ export default function Base() {
 
     return <div className="drawer lg:drawer-open height-fill-avaible">
             <input id="my-drawer-2" type="checkbox" className="drawer-toggle"/>
-            <div className="drawer-content flex flex-col">
+            <div className="drawer-content flex flex-col height-fill-avaible overflow-auto">
                 <div className="navbar flex gap-2 z[1] sticky top-0 glass">
                     <div className="flex-none">
                         <label htmlFor="my-drawer-2" className="btn btn-square btn-ghost drawer-button lg:hidden">
@@ -38,10 +40,10 @@ export default function Base() {
                     <Routes>
                         <Route path='/' Component={Dashboard}/>
                         <Route path='/dashboard' Component={Dashboard}/>
-                        <Route path='/form' Component={Dashboard}/>
+                        <Route path='/form' Component={Form}/>
                         <Route path='/cari' Component={Cari}/>
                         <Route path='/rekap' Component={Rekap}/>
-                        <Route path='/admin' Component={Dashboard}/>
+                        <Route path='/admin' Component={Admin}/>
                     </Routes>
                 </div>
             </div> 

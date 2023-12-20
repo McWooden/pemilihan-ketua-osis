@@ -53,7 +53,7 @@ function TotalKtp() {
 }
 
 function TotalAdmin() {
-    const users = useSelector((state) => state.source.admins)
+    const admins = useSelector((state) => state.source.admins)
     const [fetchError, setFetchError] = useState(false)
 
     const navigate = useNavigate()
@@ -61,14 +61,14 @@ function TotalAdmin() {
 
     const fetchAdmins = useCallback(async () => {
         setFetchError(false)
-        const { data, error } = await supabase.from("admins").select("username")
+        const { data, error } = await supabase.from("admins").select("id, username")
         if (error) return setFetchError(true)
         dispatch(setAdmins(data))
     }, [dispatch])
 
     useEffect(() => {
-        if (!users) fetchAdmins()
-    }, [fetchAdmins, users])
+        if (!admins) fetchAdmins()
+    }, [fetchAdmins, admins])
 
     return (
         <div className="stat">
@@ -77,7 +77,7 @@ function TotalAdmin() {
             </div>
             <div className="stat-title">Total admin</div>
             <div className="stat-value text-secondary">
-                {users && users.length}{" "}
+                {admins && admins.length}{" "}
                 {fetchError && <span className="bg-error px-2">Err</span>}
             </div>
             <button className="btn btn-secondary" onClick={() => navigate("/admin")}>
