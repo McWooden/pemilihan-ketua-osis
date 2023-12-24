@@ -7,8 +7,8 @@ import { useSearchParams } from "react-router-dom";
 import DisplayUser from "./DisplayUser";
 
 export default function Cari() {
-    const [fetchError, setFetchError] = useState('')
     const [user, setUser] = useState(null)
+    const [fetchError, setFetchError] = useState('')
     const [fetchEmpety, setFetchEmpety] = useState(false)
 
     const [searchKey, setSearchKey] = useState('')

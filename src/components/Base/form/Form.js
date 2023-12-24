@@ -5,12 +5,27 @@ import AlertError from "../../Utils/AlertError"
 import { useDispatch, useSelector } from "react-redux"
 import { setAdmins } from "../../../redux/source"
 import { MdRefresh } from "react-icons/md";
+import { useSearchParams } from "react-router-dom"
+import Alert from "../../Utils/Alert"
+import TableData from "../rekap/TableData"
+import { bucketUrl, dateFormat } from "../../../utils"
+import { FaRegTrashAlt } from "react-icons/fa";
 
-// next finish this
+// fitur edit
 export default function Form() {
+    // admins variable
     const admins = useSelector(state => state.source.admins)
     const [fetchAdminsError, setFetchAdminsError] = useState(false)
+    // handling fetch
+    const [isloading, setIsLoading] = useState(false)
+    const [errorFileUpload, setErrorFileUpload] = useState(false)
+    const [errorInsertRow, setErrorInsertRow] = useState(false)
+    // handle query
+    const [user, setUser] = useState(null)
+    const [fetchError, setFetchError] = useState('')
+    const [fetchEmpety, setFetchEmpety] = useState(false)
 
+    // field variable
     const [nik, setNik] = useState('')
     const [nama, setNama] = useState('')
     const [tempatLahir, setTempatLahir] = useState('')
@@ -18,8 +33,8 @@ export default function Form() {
     const [jenisKelamin, setJenisKelamin] = useState('-')
     const [golonganDarah, setGolonganDarah] = useState('-')
     const [alamat, setAlamat] = useState('')
-    const [rt, setRt] = useState('')
-    const [rw, setRw] = useState('')
+    const [rt, setRt] = useState(0)
+    const [rw, setRw] = useState(0)
     const [kelurahanDesa, setKelurahanDesa] = useState('')
     const [kecamatan, setKecamatan] = useState('')
     const [agama, setAgama] = useState('-')
@@ -30,16 +45,53 @@ export default function Form() {
     const [file, setFile] = useState(null)
     const [typeFileKtp, setTypeFileKtp] = useState('image')
     const [pengelolaId, setPengelolaId] = useState('-')
-
-    const [isloading, setIsLoading] = useState(false)
-    const [errorFileUpload, setErrorFileUpload] = useState(false)
-    const [errorInsertRow, setErrorInsertRow] = useState(false)
-
-    const dispatch = useDispatch()
-
     const onDrop = useCallback(acceptFiles => {
         setFile(acceptFiles[0])
     }, [])
+
+    // define hook
+    let [searchParams, setSearchParams] = useSearchParams()
+    const dispatch = useDispatch()
+
+    // fetch data
+    const fetchData = useCallback(async () => {
+        setFetchError('')
+        setFetchEmpety(false)
+        const { data, error } = await supabase.from("users").select("*").eq('id', searchParams.get('q'))
+        if (error) return setFetchError(error.message)
+
+        if (!data.length) setFetchEmpety(true)
+        setUser(data[0])
+    }, [searchParams])
+
+    // fetch when there a query
+    useEffect(() => {
+        if (searchParams.get('q')) fetchData()
+    }, [fetchData, searchParams])
+
+    // effect when user is get
+    useEffect(() => {
+        if (!user) return
+        setNik(user?.nik || '');
+        setNama(user?.nama || '');
+        setTempatLahir(user?.tempatLahir || '');
+        setTanggalLahir(user?.tanggalLahir ? dateFormat(user.tanggalLahir) : '');
+        setJenisKelamin(user?.jenisKelamin || '-');
+        setGolonganDarah(user?.golonganDarah || '-');
+        setAlamat(user?.alamat || '');
+        setRt(user?.rt || 0);
+        setRw(user?.rw || 0);
+        setKelurahanDesa(user?.kelurahanDesa || '');
+        setKecamatan(user?.kecamatan || '');
+        setAgama(user?.agama || '-');
+        setStatusPerkawinan(user?.statusPerkawinan || '-');
+        setPekerjaan(user?.pekerjaan || '');
+        setKewarganegaraan(user?.kewarganegaraan || '-');
+        setBerlakuHingga(user?.tanggalLahir ? dateFormat(user.berlakuHingga) : '');
+        setFile(null);
+        setTypeFileKtp(user?.typeFileKtp || '-');
+        setPengelolaId(user?.pengelolaId || '-')
+    }, [user])
 
     const {getRootProps, getInputProps, isDragActive, isDragReject, isDragAccept} = useDropzone({
         onDrop,
@@ -57,8 +109,8 @@ export default function Form() {
         setJenisKelamin('-');
         setGolonganDarah('-');
         setAlamat('');
-        setRt('');
-        setRw('');
+        setRt(0);
+        setRw(0);
         setKelurahanDesa('');
         setKecamatan('');
         setAgama('-');
@@ -83,9 +135,10 @@ export default function Form() {
             agama, statusPerkawinan, pekerjaan, kewarganegaraan,
             pathFileKtp: nik, typeFileKtp, berlakuHingga, pengelolaId
         }
+        console.log(dataToSend);
         try {
             if (file) {
-                const fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik, file)
+                const fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik, file, { upsert: true })
                 if (fileUploadStatus.error) {
                     setErrorFileUpload(fileUploadStatus.error.message)
                     throw new Error(fileUploadStatus.error.message)
@@ -93,13 +146,25 @@ export default function Form() {
                 dataToSend.pathFileKtp = fileUploadStatus.data.path
             }
 
-            const insertRowStatus = await supabase.from('users').insert([dataToSend]).select()
-            if (insertRowStatus.error) {
-                console.log(insertRowStatus.error);
-                setErrorInsertRow(insertRowStatus.error.message)
-                throw new Error(insertRowStatus.error.message)
+            
+            let rowStatus;
+            if (user) {
+                rowStatus = await supabase.from('users')
+                .update(dataToSend)
+                .eq('id', user.id)
+                .select()
+            } else {
+                rowStatus = await supabase.from('users').insert([dataToSend]).select()
+            }
+            if (rowStatus.error) {
+                console.log(rowStatus.error);
+                setErrorInsertRow(rowStatus.error.message)
+                throw new Error(rowStatus.error.message)
             }
             setIsLoading(false)
+            searchParams.delete('q')
+            setSearchParams(searchParams)
+            setUser(null)
             resetAllField()
         } catch (error) {
             return setIsLoading(false)
@@ -119,259 +184,311 @@ export default function Form() {
         if (!admins) fetchAdmins()
     },[admins, fetchAdmins])
 
-    return <form className="flex flex-col h-full gap-2 items-center py-4" onSubmit={handleSubmit}>
+    async function handleDeleteFileKtp() {
+        try {
+            const statusStorage = await supabase.storage.from('avatars').remove([user?.pathFileKtp]) // path file ktp itu sama kaya nik nya
+            if (statusStorage.error) throw new Error(statusStorage.error)
+            setUser({...user, pathFileKtp: null})
+            document.getElementById('modalDelete').close()
+        } catch (error) {
+            
+        }
+    }
+
+    function handleCancelEdit() {
+        setUser(null)
+        resetAllField()
+        searchParams.delete('q')
+        setSearchParams(searchParams)
+    }
+
+    return <div className="flex flex-col gap-2 items-center">
+        {searchParams.get('q') && <>
+            {fetchError && <AlertError text={fetchError}/>}
+            {(fetchEmpety && searchParams.get('q')) && <Alert text={`Tidak ada ID yang cocok dengan ${searchParams.get('q')}.`} className="btn justify-start h-auto" cb={() => {
+                searchParams.delete('q')
+                setSearchParams(searchParams)
+                setFetchEmpety(false)
+            }}/>}
+            {user && <div className="w-full max-w-lg">
+                <TableData users={[user]} className="flex-1"/>
+            </div>
+            }
+        </>}
         {errorFileUpload && <AlertError text={`File: ${errorFileUpload}`}/>}
         {errorInsertRow && <AlertError text={`Insert data: ${errorInsertRow}`} />}
-        <label className="form-control w-full max-w-lg">
-            <div className="label">
-                <span className="label-text">Nomor Induk Kependudukan</span>
-            </div>
-            <input
-                value={nik}
-                onChange={(e) => setNik(e.target.value)}
-                type="number"
-                placeholder="Ketik 16 digit disini"
-                className="input input-bordered w-full"
-                max={16} min={16}
-                required
-            />
-        </label>
-        <label className="form-control w-full max-w-lg">
-            <div className="label">
-                <span className="label-text">Nama</span>
-            </div>
-            <input
-                value={nama}
-                onChange={(e) => setNama(e.target.value)}
-                type="text"
-                placeholder="Ketik disini"
-                className="input input-bordered w-full"
-            />
-        </label>
-        <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-            <label className="form-control w-full">
+        <form className="flex flex-col gap-2 py-4 w-full flex-1 max-w-lg items-center" onSubmit={handleSubmit}>
+            <label className="form-control w-full max-w-lg">
                 <div className="label">
-                    <span className="label-text">Tempat Lahir</span>
+                    <span className="label-text">Nomor Induk Kependudukan</span>
                 </div>
                 <input
-                    value={tempatLahir}
-                    onChange={(e) => setTempatLahir(e.target.value)}
+                    value={nik}
+                    onChange={(e) => setNik(e.target.value)}
+                    type="number"
+                    placeholder="Ketik 16 digit disini"
+                    className="input input-bordered w-full"
+                    maxLength={16} minLength={16}
+                    required
+                />
+            </label>
+            <label className="form-control w-full max-w-lg">
+                <div className="label">
+                    <span className="label-text">Nama</span>
+                </div>
+                <input
+                    value={nama}
+                    onChange={(e) => setNama(e.target.value)}
                     type="text"
                     placeholder="Ketik disini"
                     className="input input-bordered w-full"
                 />
             </label>
-            <label className="form-control w-full">
-                <div className="label">
-                    <span className="label-text">Tanggal Lahir</span>
-                </div>
-                <input
-                    value={tanggalLahir}
-                    onChange={(e) => setTanggalLahir(e.target.value)}
-                    type="date"
-                    className="input input-bordered w-full"
-                />
-            </label>
-        </div>
-        <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-            <label className="form-control w-full">
-                <div className="label">
-                    <span className="label-text">Jenis Kelamin</span>
-                </div>
-                <select className="select select-bordered" value={jenisKelamin} onChange={(e) => setJenisKelamin(e.target.value)}>
-                    <option disabled value='-'>Pilih satu</option>
-                    <option value='Laki-laki'>Laki-laki</option>
-                    <option value='Perempuan'>Perempuan</option>
-                </select>
-            </label>
-            <label className="form-control w-full">
-                <div className="label">
-                    <span className="label-text">Gol Darah</span>
-                </div>
-                <select className="select select-bordered" value={golonganDarah} onChange={(e) => setGolonganDarah(e.target.value)}>
-                    <option disabled value='-'>Pilih satu</option>
-                    <option value='A'>A</option>
-                    <option value='B'>B</option>
-                    <option value='AB'>AB</option>
-                    <option value='O'>O</option>
-                </select>
-            </label>
-        </div>
-        <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-            <label className="form-control w-full flex-1">
-                <div className="label">
-                    <span className="label-text">Alamat</span>
-                </div>
-                <input
-                    value={alamat}
-                    onChange={(e) => setAlamat(e.target.value)}
-                    type="text"
-                    placeholder="Ketik disini"
-                    className="input input-bordered w-full"
-                />
-            </label>
-            <div className="flex gap-2 max-w-lg flex-1">
+            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
                 <label className="form-control w-full">
                     <div className="label">
-                        <span className="label-text">RT</span>
+                        <span className="label-text">Tempat Lahir</span>
                     </div>
                     <input
-                        value={rt}
-                        onChange={(e) => setRt(e.target.value)}
-                        type="number"
+                        value={tempatLahir}
+                        onChange={(e) => setTempatLahir(e.target.value)}
+                        type="text"
                         placeholder="Ketik disini"
                         className="input input-bordered w-full"
                     />
                 </label>
                 <label className="form-control w-full">
                     <div className="label">
-                        <span className="label-text">RW</span>
+                        <span className="label-text">Tanggal Lahir</span>
                     </div>
                     <input
-                        value={rw}
-                        onChange={(e) => setRw(e.target.value)}
-                        type="number"
-                        placeholder="Ketik disini"
+                        value={tanggalLahir}
+                        onChange={(e) => setTanggalLahir(e.target.value)}
+                        type="date"
                         className="input input-bordered w-full"
                     />
                 </label>
             </div>
-        </div>
-        <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-            <label className="form-control w-full">
-                <div className="label">
-                    <span className="label-text">Kel/Desa</span>
-                </div>
-                <input
-                    value={kelurahanDesa}
-                    onChange={(e) => setKelurahanDesa(e.target.value)}
-                    type="text"
-                    placeholder="Ketik disini"
-                    className="input input-bordered w-full"
-                />
-            </label>
-            <label className="form-control w-full">
-                <div className="label">
-                    <span className="label-text">Kecamatan</span>
-                </div>
-                <input
-                    value={kecamatan}
-                    onChange={(e) => setKecamatan(e.target.value)}
-                    type="text"
-                    placeholder="Ketik disini"
-                    className="input input-bordered w-full"
-                />
-            </label>
-        </div>
-        <label className="form-control w-full max-w-lg">
-            <div className="label">
-                <span className="label-text">Agama</span>
+            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                <label className="form-control w-full">
+                    <div className="label">
+                        <span className="label-text">Jenis Kelamin</span>
+                    </div>
+                    <select className="select select-bordered" value={jenisKelamin} onChange={(e) => setJenisKelamin(e.target.value)}>
+                        <option disabled value='-'>Pilih satu</option>
+                        <option value='Laki-laki'>Laki-laki</option>
+                        <option value='Perempuan'>Perempuan</option>
+                    </select>
+                </label>
+                <label className="form-control w-full">
+                    <div className="label">
+                        <span className="label-text">Gol Darah</span>
+                    </div>
+                    <select className="select select-bordered" value={golonganDarah} onChange={(e) => setGolonganDarah(e.target.value)}>
+                        <option disabled value='-'>Pilih satu</option>
+                        <option value='A'>A</option>
+                        <option value='B'>B</option>
+                        <option value='AB'>AB</option>
+                        <option value='O'>O</option>
+                    </select>
+                </label>
             </div>
-            <select className="select select-bordered" value={agama} onChange={(e) => setAgama(e.target.value)}>
-                <option disabled value='-'>Pilih satu</option>
-                <option value='Islam<'>Islam</option>
-                <option value='Kristen'>Kristen</option>
-                <option value='Katolik'>Katolik</option>
-                <option value='Hindu<'>Hindu</option>
-                <option value='Buddha'>Buddha</option>
-                <option value='Khonghucu'>Khonghucu</option>
-            </select>
-        </label>
-        <label className="form-control w-full max-w-lg">
-            <div className="label">
-                <span className="label-text">Status perkawinan</span>
-            </div>
-            <select className="select select-bordered" value={statusPerkawinan} onChange={(e) => setStatusPerkawinan(e.target.value)}>
-                <option disabled value='-'>Pilih satu</option>
-                <option value='Islam<'>Belum Kawin</option>
-                <option value='Kristen'>Kawin</option>
-            </select>
-        </label>
-        <label className="form-control w-full max-w-lg">
-            <div className="label">
-                <span className="label-text">Pekerjaan</span>
-            </div>
-            <input
-                value={pekerjaan}
-                onChange={(e) => setPekerjaan(e.target.value)}
-                type="text"
-                placeholder="Ketik disini"
-                className="input input-bordered w-full"
-            />
-        </label>
-        <label className="form-control w-full max-w-lg">
-            <div className="label">
-                <span className="label-text">Kewarganegaraan</span>
-            </div>
-            <select className="select select-bordered" value={kewarganegaraan} onChange={(e) => setKewarganegaraan(e.target.value)}>
-                <option disabled value='-'>Pilih satu</option>
-                <option value='Islam'>WNI</option>
-                <option value='Kristen'>WNA</option>
-                <option value='Katolik'>ITAP</option>
-            </select>
-        </label>
-        <label className="form-control w-full max-w-lg">
-                <div className="label">
-                    <span className="label-text">Berlaku Hingga</span>
-                </div>
-                <input
-                    value={berlakuHingga}
-                    onChange={(e) => setBerlakuHingga(e.target.value)}
-                    type="date"
-                    className="input input-bordered w-full"
-                />
-            </label>
-        <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-            <div className="w-full max-w-lg relative" {...getRootProps()}>
-                <div className="label">
-                    <span className="label-text">Foto KTP</span>
-                </div>
-                <input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neutral text-neutral file:text-neutral-content cursor-pointer" accept="image/jpg,.pdf" {...getInputProps()} style={{display: 'block'}}
-                    onChange={(x) => {
-                        onDrop(x.target.files)
-                    }}
-                />
-                <div className="label">
-                    <span className="label-text">klik atau jatuhkan disini</span>
-                    <span className="label-text-alt">pdf dan jpg/jpeg</span>
-                </div>
-                {isDragActive && 
-                    <div className={`absolute top-0 bottom-0 right-0 left-0 ${isDragAccept && 'bg-neutral/75 text-neutral-content'} ${isDragReject && 'bg-error/75 text-error-content'} z-[2] text-xl p-4`}>
-                        <div className={`border border-dashed ${isDragAccept && 'border-neutral-content'} ${isDragReject && 'border-error-content'} border-8 w-full h-full grid place-items-center`}>
-                            {isDragAccept && <p>File diterima</p>}
-                            {isDragReject && <p>Hanya menerima pdf dan jpg</p>}
+            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                <label className="form-control w-full flex-1">
+                    <div className="label">
+                        <span className="label-text">Alamat</span>
+                    </div>
+                    <input
+                        value={alamat}
+                        onChange={(e) => setAlamat(e.target.value)}
+                        type="text"
+                        placeholder="Ketik disini"
+                        className="input input-bordered w-full"
+                    />
+                </label>
+                <div className="flex gap-2 max-w-lg flex-1">
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">RT</span>
                         </div>
+                        <input
+                            value={rt}
+                            onChange={(e) => setRt(e.target.value)}
+                            type="number"
+                            placeholder="Ketik disini"
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">RW</span>
+                        </div>
+                        <input
+                            value={rw}
+                            onChange={(e) => setRw(e.target.value)}
+                            type="number"
+                            placeholder="Ketik disini"
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                </div>
+            </div>
+            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                <label className="form-control w-full">
+                    <div className="label">
+                        <span className="label-text">Kel/Desa</span>
                     </div>
-                }
+                    <input
+                        value={kelurahanDesa}
+                        onChange={(e) => setKelurahanDesa(e.target.value)}
+                        type="text"
+                        placeholder="Ketik disini"
+                        className="input input-bordered w-full"
+                    />
+                </label>
+                <label className="form-control w-full">
+                    <div className="label">
+                        <span className="label-text">Kecamatan</span>
+                    </div>
+                    <input
+                        value={kecamatan}
+                        onChange={(e) => setKecamatan(e.target.value)}
+                        type="text"
+                        placeholder="Ketik disini"
+                        className="input input-bordered w-full"
+                    />
+                </label>
             </div>
             <label className="form-control w-full max-w-lg">
                 <div className="label">
-                    <span className="label-text">Tipe File</span>
+                    <span className="label-text">Agama</span>
                 </div>
-                <select className="select select-bordered" value={typeFileKtp} onChange={(e) => setTypeFileKtp(e.target.value)}>
-                    <option value='image'>image/jpeg,jpg</option>
-                    <option value='document'>application/pdf</option>
+                <select className="select select-bordered" value={agama} onChange={(e) => setAgama(e.target.value)}>
+                    <option disabled value='-'>Pilih satu</option>
+                    <option value='Islam<'>Islam</option>
+                    <option value='Kristen'>Kristen</option>
+                    <option value='Katolik'>Katolik</option>
+                    <option value='Hindu<'>Hindu</option>
+                    <option value='Buddha'>Buddha</option>
+                    <option value='Khonghucu'>Khonghucu</option>
                 </select>
             </label>
-        </div>
-        <div className="w-full max-w-lg flex flex-col">
-            {file && <>
-                {typeFileKtp === 'image' && <img src={URL.createObjectURL(file)} alt="foto ktp pengguna" className="w-full"/>}
-                {typeFileKtp === 'document' && <iframe src={URL.createObjectURL(file)} width="100%" title="user pdf"/>}
-            </>}
-        </div>
-        <div className="flex w-full max-w-lg gap-2 items-center">
             <label className="form-control w-full max-w-lg">
                 <div className="label">
-                    <span className="label-text">Tambahkan pengelola</span>
+                    <span className="label-text">Status perkawinan</span>
                 </div>
-                <select className="select select-bordered" value={pengelolaId} onChange={(e) => setPengelolaId(e.target.value)}>
+                <select className="select select-bordered" value={statusPerkawinan} onChange={(e) => setStatusPerkawinan(e.target.value)}>
                     <option disabled value='-'>Pilih satu</option>
-                    {admins?.map(admin => <option key={admin.id}>{admin.username}</option>) || ''}
+                    <option value='Islam<'>Belum Kawin</option>
+                    <option value='Kristen'>Kawin</option>
                 </select>
             </label>
-            {fetchAdminsError && <div className="btn btn-primary text-primary-content text-xl tooltip grid place-items-center" data-tip="Segarkan" onClick={fetchAdmins}><MdRefresh/></div>}
-        </div>
-        {isloading ? <span className='btn btn-accent w-full max-w-md mt-4'>Loading</span> : <button className="btn btn-accent w-full max-w-md mt-4">Tambah</button>}
-    </form>
+            <label className="form-control w-full max-w-lg">
+                <div className="label">
+                    <span className="label-text">Pekerjaan</span>
+                </div>
+                <input
+                    value={pekerjaan}
+                    onChange={(e) => setPekerjaan(e.target.value)}
+                    type="text"
+                    placeholder="Ketik disini"
+                    className="input input-bordered w-full"
+                />
+            </label>
+            <label className="form-control w-full max-w-lg">
+                <div className="label">
+                    <span className="label-text">Kewarganegaraan</span>
+                </div>
+                <select className="select select-bordered" value={kewarganegaraan} onChange={(e) => setKewarganegaraan(e.target.value)}>
+                    <option disabled value='-'>Pilih satu</option>
+                    <option value='Islam'>WNI</option>
+                    <option value='Kristen'>WNA</option>
+                    <option value='Katolik'>ITAP</option>
+                </select>
+            </label>
+            <label className="form-control w-full max-w-lg">
+                    <div className="label">
+                        <span className="label-text">Berlaku Hingga</span>
+                    </div>
+                    <input
+                        value={berlakuHingga}
+                        onChange={(e) => setBerlakuHingga(e.target.value)}
+                        type="date"
+                        className="input input-bordered w-full"
+                    />
+                </label>
+            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                <div className="w-full max-w-lg relative" {...getRootProps()}>
+                    <div className="label">
+                        <span className="label-text">Foto KTP</span>
+                    </div>
+                    <input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neutral text-neutral file:text-neutral-content cursor-pointer" accept="image/jpg,.pdf" {...getInputProps()} style={{display: 'block'}}
+                        onChange={(x) => {
+                            onDrop(x.target.files)
+                        }}
+                    />
+                    <div className="label">
+                        <span className="label-text">klik atau jatuhkan disini</span>
+                        <span className="label-text-alt">pdf dan jpg/jpeg</span>
+                    </div>
+                    {isDragActive && 
+                        <div className={`absolute top-0 bottom-0 right-0 left-0 ${isDragAccept && 'bg-neutral/75 text-neutral-content'} ${isDragReject && 'bg-error/75 text-error-content'} z-[2] text-xl p-4`}>
+                            <div className={`border border-dashed ${isDragAccept && 'border-neutral-content'} ${isDragReject && 'border-error-content'} border-8 w-full h-full grid place-items-center`}>
+                                {isDragAccept && <p>File diterima</p>}
+                                {isDragReject && <p>Hanya menerima pdf dan jpg</p>}
+                            </div>
+                        </div>
+                    }
+                </div>
+                <label className="form-control w-full max-w-lg">
+                    <div className="label">
+                        <span className="label-text">Tipe File</span>
+                    </div>
+                    <select className="select select-bordered" value={typeFileKtp} onChange={(e) => setTypeFileKtp(e.target.value)}>
+                        <option value='image'>image/jpeg,jpg</option>
+                        <option value='document'>application/pdf</option>
+                    </select>
+                </label>
+            </div>
+            <div className="w-full max-w-lg flex flex-col">
+                {user && user.pathFileKtp && <div className="p-2 pb-4 rounded shadow bg-base-300 flex flex-col gap-2">
+                    {typeFileKtp === 'image' && <img src={bucketUrl + user.pathFileKtp} alt="foto ktp pengguna" className="w-full"/>}
+                    {typeFileKtp === 'document' && <iframe src={bucketUrl + user.pathFileKtp} width="100%" title="user pdf"/>}
+                    <button className="btn btn-error w-fit self-end" onClick={()=>document.getElementById('modalDelete').showModal()}><FaRegTrashAlt /></button>
+                </div>}
+                {file && <>
+                    {typeFileKtp === 'image' && <img src={URL.createObjectURL(file)} alt="foto ktp pengguna" className="w-full"/>}
+                    {typeFileKtp === 'document' && <iframe src={URL.createObjectURL(file)} width="100%" title="user pdf"/>}
+                </>}
+            </div>
+            <div className="flex w-full max-w-lg gap-2 items-center">
+                <label className="form-control w-full max-w-lg">
+                    <div className="label">
+                        <span className="label-text">Tambahkan pengelola</span>
+                    </div>
+                    <select className="select select-bordered" value={pengelolaId} onChange={(e) => setPengelolaId(e.target.value)}>
+                        <option disabled value='-'>Pilih satu</option>
+                        {admins?.map(admin => <option key={admin.id}>{admin.username}</option>) || ''}
+                    </select>
+                </label>
+                {fetchAdminsError && <div className="btn btn-primary text-primary-content text-xl tooltip grid place-items-center" data-tip="Segarkan" onClick={fetchAdmins}><MdRefresh/></div>}
+            </div>
+            <div className="flex gap-2 max-w-md w-full  mt-4">
+                {user && <span className={`btn btn-secondary`} onClick={handleCancelEdit}>Batalkan</span>}
+                {isloading ? <span className={`btn ${user ? 'btn-primary' : 'btn-accent'} flex-1`}>Loading</span> : <button className={`btn ${user ? 'btn-primary' : 'btn-accent'} flex-1`}>{user? 'Simpan' : 'Tambah'}</button>}
+            </div>
+        </form>
+        <dialog id="modalDelete" className="modal">
+            <div className="modal-box">
+                <h3 className="font-bold text-lg">Buang Gambar Lama</h3>
+                <p className="py-4">File akan dihapus dan data terkait akan diperbarui setelahnya</p>
+                <div className="modal-action">
+                <form method="dialog">
+                    <button className="btn">Tutup</button>
+                </form>
+                <button className="btn btn-error" onClick={handleDeleteFileKtp}>Lanjutkan</button>
+                </div>
+            </div>
+        </dialog>
+    </div>
 }

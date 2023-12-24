@@ -8,6 +8,13 @@ export function formatDate(date) {
   const formattedDate = moment(date).format('DD-MM-YYYY');
   return formattedDate === 'Invalid date' ? '-': formattedDate 
 }
+
+export function dateFormat(date) {
+  if (!date) return '-'
+  const formattedDate = moment(date).format('yyyy-MM-DD');
+  return formattedDate === 'Invalid date' ? '-': formattedDate 
+}
+
 export function verifyAdmin(data) {
   return data.username === process.env.REACT_APP_USERNAME && data.password === process.env.REACT_APP_PASSWORD
 }

@@ -3,7 +3,7 @@ import { verifiedAccount } from '../../utils'
 import Dashboard from './dashboard/Dashboard'
 import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
-import Rekap from './Rekap'
+import Rekap from './rekap/Rekap'
 import Cari from './cari/Cari'
 import Admin from './admin/Admin'
 import Form from './form/Form'
@@ -36,7 +36,7 @@ export default function Base() {
                         <p className="btn">Logout</p>
                     </div>
                 </div>
-                <div className='flex-1 p-4'>
+                <div className='flex-1 p-4 overflow-auto'>
                     <Routes>
                         <Route path='/' Component={Dashboard}/>
                         <Route path='/dashboard' Component={Dashboard}/>
