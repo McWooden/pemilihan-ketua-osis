@@ -1,29 +1,44 @@
 import { CiSearch } from "react-icons/ci";
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import supabase from "../../../config/supabaseClient";
 import Alert from "../../Utils/Alert";
 import AlertError from "../../Utils/AlertError";
+import { useSearchParams } from "react-router-dom";
+import DisplayUser from "./DisplayUser";
 
 export default function Cari() {
-    const [searchKey, setSearchKey] = useState('')
     const [fetchError, setFetchError] = useState('')
-    const [users, setUsers] = useState(null)
+    const [user, setUser] = useState(null)
     const [fetchEmpety, setFetchEmpety] = useState(false)
+
+    const [searchKey, setSearchKey] = useState('')
+
+    let [searchParams, setSearchParams] = useSearchParams()
 
     async function handleSearch(e) {
         e.preventDefault()
+        searchParams.set('q', searchKey)
+        setSearchParams(searchParams, {replace: true})
+    }
+
+    const fetchData = useCallback(async () => {
         setFetchError('')
         setFetchEmpety(false)
-        const { data, error } = await supabase.from("users").select("*").eq('nik', searchKey)
+        const { data, error } = await supabase.from("users").select("*").eq('nik', searchParams.get('q'))
         if (error) return setFetchError(error.message)
 
         if (!data.length) setFetchEmpety(true)
 
-        setUsers(data)
-    }
+        setUser(data[0])
+    }, [searchParams])
 
-    return <form className="h-full flex flex-col gap-2" onSubmit={handleSearch}>
-        <div className="border flex rounded-xl overflow-hidden focus:ring-sky-500 focus:ring-1">
+    useEffect(() => {
+        if (searchParams.get('q')) fetchData()
+    }, [fetchData, searchParams])
+
+    return <div className="h-full flex flex-col gap-2 items-center">
+     <form className="flex flex-col items-center gap-2 w-full" onSubmit={handleSearch}>
+        <div className="border flex rounded-xl overflow-hidden focus:ring-sky-500 focus:ring-1 w-full max-w-xl">
             <input type="number" placeholder="Ketik NIK disini" className="input w-full border-none " value={searchKey} onChange={x => {
                 setSearchKey(x.target.value)
                 setFetchEmpety(false)
@@ -33,28 +48,10 @@ export default function Cari() {
             </button>
         </div>
         {fetchError && <AlertError text={fetchError}/>}
-        <table className="table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>NIK</th>
-                    <th>Nama</th>
-                    <th>Jenis Kelamin</th>
-                </tr>
-            </thead>
-            <tbody>
-                {users?.map(user => (
-                    <tr className="hover" key={user.nik}>
-                        <th>{user.id}</th>
-                        <td>{user.nik}</td>
-                        <td>{user.nama}</td>
-                        <td>{user.jenisKelamin}</td>
-                    </tr>
-                )) || []}
-            </tbody>
-        </table>
-        {(fetchEmpety && searchKey !== '') && <Alert text={`Tidak ada NIK yang cocok dengan ${searchKey}.`} className="btn justify-start h-auto" cb={() => setFetchEmpety(false)}/>}
+        {(fetchEmpety && searchParams.get('q')) && <Alert text={`Tidak ada NIK yang cocok dengan ${searchParams.get('q')}.`} className="btn justify-start h-auto" cb={() => setFetchEmpety(false)}/>}
     </form>
+    <DisplayUser data={user}/>
+    </div>
 }
 
 

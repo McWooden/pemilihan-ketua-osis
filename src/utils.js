@@ -1,8 +1,12 @@
 import moment from "moment"
 import store from "./redux/store"
 
+export const bucketUrl = 'https://fsgktjbbbupsvnqqaepk.supabase.co/storage/v1/object/public/fotoKtp/'
+
 export function formatDate(date) {
-  return moment(date).format('DD-MM-YYYY')
+  if (!date) return '-'
+  const formattedDate = moment(date).format('DD-MM-YYYY');
+  return formattedDate === 'Invalid date' ? '-': formattedDate 
 }
 export function verifyAdmin(data) {
   return data.username === process.env.REACT_APP_USERNAME && data.password === process.env.REACT_APP_PASSWORD

@@ -1,11 +1,16 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import supabase from "../../../config/supabaseClient"
 import AlertError from "../../Utils/AlertError"
+import { useDispatch, useSelector } from "react-redux"
+import { setAdmins } from "../../../redux/source"
+import { MdRefresh } from "react-icons/md";
 
-// preveew state
 // next finish this
 export default function Form() {
+    const admins = useSelector(state => state.source.admins)
+    const [fetchAdminsError, setFetchAdminsError] = useState(false)
+
     const [nik, setNik] = useState('')
     const [nama, setNama] = useState('')
     const [tempatLahir, setTempatLahir] = useState('')
@@ -24,10 +29,13 @@ export default function Form() {
     const [berlakuHingga, setBerlakuHingga] = useState('')
     const [file, setFile] = useState(null)
     const [typeFileKtp, setTypeFileKtp] = useState('image')
+    const [pengelolaId, setPengelolaId] = useState('-')
 
     const [isloading, setIsLoading] = useState(false)
     const [errorFileUpload, setErrorFileUpload] = useState(false)
     const [errorInsertRow, setErrorInsertRow] = useState(false)
+
+    const dispatch = useDispatch()
 
     const onDrop = useCallback(acceptFiles => {
         setFile(acceptFiles[0])
@@ -73,7 +81,7 @@ export default function Form() {
             jenisKelamin, golonganDarah,
             alamat, rt, rw, kelurahanDesa, kecamatan,
             agama, statusPerkawinan, pekerjaan, kewarganegaraan,
-            pathFileKtp: nik, typeFileKtp, berlakuHingga
+            pathFileKtp: nik, typeFileKtp, berlakuHingga, pengelolaId
         }
         try {
             if (file) {
@@ -97,6 +105,19 @@ export default function Form() {
             return setIsLoading(false)
         }
     }
+
+    const fetchAdmins = useCallback(async () => {
+        setFetchAdminsError(false)
+        const { data, error } = await supabase.from("admins").select("id, username")
+        
+        if (error) return setFetchAdminsError(true)
+
+        dispatch(setAdmins(data))
+    }, [dispatch])
+
+    useEffect(() => {
+        if (!admins) fetchAdmins()
+    },[admins, fetchAdmins])
 
     return <form className="flex flex-col h-full gap-2 items-center py-4" onSubmit={handleSubmit}>
         {errorFileUpload && <AlertError text={`File: ${errorFileUpload}`}/>}
@@ -338,6 +359,18 @@ export default function Form() {
                 {typeFileKtp === 'image' && <img src={URL.createObjectURL(file)} alt="foto ktp pengguna" className="w-full"/>}
                 {typeFileKtp === 'document' && <iframe src={URL.createObjectURL(file)} width="100%" title="user pdf"/>}
             </>}
+        </div>
+        <div className="flex w-full max-w-lg gap-2 items-center">
+            <label className="form-control w-full max-w-lg">
+                <div className="label">
+                    <span className="label-text">Tambahkan pengelola</span>
+                </div>
+                <select className="select select-bordered" value={pengelolaId} onChange={(e) => setPengelolaId(e.target.value)}>
+                    <option disabled value='-'>Pilih satu</option>
+                    {admins?.map(admin => <option key={admin.id}>{admin.username}</option>) || ''}
+                </select>
+            </label>
+            {fetchAdminsError && <div className="btn btn-primary text-primary-content text-xl tooltip grid place-items-center" data-tip="Segarkan" onClick={fetchAdmins}><MdRefresh/></div>}
         </div>
         {isloading ? <span className='btn btn-accent w-full max-w-md mt-4'>Loading</span> : <button className="btn btn-accent w-full max-w-md mt-4">Tambah</button>}
     </form>
