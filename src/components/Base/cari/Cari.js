@@ -62,6 +62,8 @@ export default function Cari() {
             if (status === 204) {
                 searchParams.delete('q')
                 setSearchParams(searchParams)
+                document.getElementById("my_modal_2").close()
+                setUser(null)
             }
         } catch (error) {
             

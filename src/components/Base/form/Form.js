@@ -180,30 +180,37 @@ export default function Form() {
             pathFileKtp: '', typeFileKtp, berlakuHingga: berlakuHingga ? berlakuHingga : null , pengelolaId: pengelolaId === '-' ? null : pengelolaId
         }
         try {
-            if (file) {
-                let fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik, file, { upsert: true })
-                if (fileUploadStatus.error) {
-                    setErrorFileUpload(fileUploadStatus.error.message)
-                    console.log(fileUploadStatus.error);
-                    throw new Error(fileUploadStatus.error.message)
+            try {
+                if (file) {
+                    let fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik + '-' + +new Date(), file)
+                    if (fileUploadStatus.error) {
+                        setErrorFileUpload(fileUploadStatus.error.message)
+                        console.log('file status',fileUploadStatus);
+                        throw new Error(fileUploadStatus.error.message)
+                    }
+                    dataToSend.pathFileKtp = fileUploadStatus.data.path
                 }
-                dataToSend.pathFileKtp = fileUploadStatus.data.path
+            } catch (error) {
+                console.log('file', error);
             }
 
-            
-            let rowStatus
-            if (user) {
-                rowStatus = await supabase.from('users')
-                .update(dataToSend)
-                .eq('id', user.id)
-                .select()
-            } else {
-                rowStatus = await supabase.from('users').insert([dataToSend]).select()
-            }
-            if (rowStatus.error) {
-                console.log(rowStatus.error)
-                setErrorInsertRow(rowStatus.error.message)
-                throw new Error(rowStatus.error.message)
+            try {
+                let rowStatus
+                if (user) {
+                    rowStatus = await supabase.from('users')
+                    .update(dataToSend)
+                    .eq('id', user.id)
+                    .select()
+                } else {
+                    rowStatus = await supabase.from('users').insert([dataToSend]).select()
+                }
+                if (rowStatus.error) {
+                    console.log('row status', rowStatus)
+                    setErrorInsertRow(rowStatus.error.message)
+                    throw new Error(rowStatus.error.message)
+                }
+            } catch (error) {
+                console.log('table error', error);
             }
             setIsLoading(false)
             searchParams.delete('q')
