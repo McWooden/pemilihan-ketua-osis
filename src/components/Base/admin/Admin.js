@@ -4,25 +4,35 @@ import supabase from "../../../config/supabaseClient"
 import { setAdmins } from "../../../redux/source"
 import { useCallback, useEffect, useState } from "react"
 import AlertError from "../../Utils/AlertError"
+import { HiRefresh } from "react-icons/hi";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 export default function Admin() {
     const admins = useSelector((state) => state.source.admins)
     const [fetchError, setFetchError] = useState(false)
+    const [isLoading, setIsloading] = useState(false)
 
     const dispatch = useDispatch()
 
     const fetchAdmins = useCallback(async () => {
+        setIsloading(true)
         setFetchError(false)
         const { data, error } = await supabase.from("admins").select("id, username")
         
-        if (error) return setFetchError(true)
-
-        dispatch(setAdmins(data))
+        if (error) {
+            setFetchError(true)
+            setIsloading(false)
+            return
+        }
+        if (data) {
+            dispatch(setAdmins(data))
+            setIsloading(false)
+        }
     }, [dispatch])
 
     useEffect(() => {
-        if (!admins) fetchAdmins()
-    }, [fetchAdmins, admins])
+        fetchAdmins()
+    }, [fetchAdmins])
 
     return <div className="h-full flex flex-col gap-2">
         <div className="stats shadow">
@@ -34,6 +44,12 @@ export default function Admin() {
                 <div className="stat-value text-secondary">
                     {admins && admins.length}{" "}
                     {fetchError && <span className="bg-error px-2">Err</span>}
+                </div>
+                <div className="stat-desc">
+                    <button className="btn btn-outline btn-secondary flex items-center gap-2" onClick={fetchAdmins}>
+                        {isLoading ? <AiOutlineLoading3Quarters className='text-2xl animate-spin'/> : <HiRefresh className='text-2xl'/>}
+                        Segarkan
+                    </button>
                 </div>
             </div>
         </div>

@@ -16,23 +16,23 @@ export default function Rekap() {
     const dispatch = useDispatch()
 
     const fetchUsers = useCallback(async () => {
-        // setIsLoading(true)
+        setIsLoading(true)
         setFetchError(false)
         const {data, error} = await supabase.from('users').select('*')
         if (error) {
             setFetchError(true)
             setIsLoading(false)
+            return
         }
         if (data) {
             dispatch(setUsers(data))
             setIsLoading(false)
         }
-        setIsLoading(false)
     },[dispatch])
 
     useEffect(() => {
         fetchUsers()
-    },[fetchUsers, users])
+    },[fetchUsers])
 
     return  <div className="flex flex-col h-full gap-2">
         <div className="stats shadow">
@@ -46,7 +46,7 @@ export default function Rekap() {
                     {fetchError && <span className="bg-error px-2">Err</span>}
                 </div>
                 <div className="stat-desc">
-                    <button className="btn btn-outline btn-primary flex items-center gap-2">
+                    <button className="btn btn-outline btn-primary flex items-center gap-2" onClick={fetchUsers}>
                         {isLoading ? <AiOutlineLoading3Quarters className='text-2xl animate-spin'/> : <HiRefresh className='text-2xl'/>}
                         Segarkan
                     </button>

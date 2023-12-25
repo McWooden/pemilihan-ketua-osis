@@ -51,10 +51,6 @@ export default function Form() {
         setFile(acceptFiles[0])
     }, [])
 
-    useEffect(() => {
-        console.log('file', file);
-    },[file])
-
     // define hook
     let [searchParams, setSearchParams] = useSearchParams()
     const dispatch = useDispatch()
@@ -145,7 +141,7 @@ export default function Form() {
         if (pekerjaan === '') text += 'pekerjaan '
         if (kewarganegaraan === '-') text += 'kewarganegaraan '
         if (berlakuHingga === '') text += 'berlakuHingga '
-        if (file === null) text += 'fotoKtp '
+        if (file === null && !user?.pathFileKtp) text += 'fotoKtp '
         if (pengelolaId === '-') text += 'pengelolaId '
 
         return text
@@ -180,38 +176,35 @@ export default function Form() {
             pathFileKtp: '', typeFileKtp, berlakuHingga: berlakuHingga ? berlakuHingga : null , pengelolaId: pengelolaId === '-' ? null : pengelolaId
         }
         try {
-            try {
-                if (file) {
-                    let fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik + '-' + +new Date(), file)
-                    if (fileUploadStatus.error) {
-                        setErrorFileUpload(fileUploadStatus.error.message)
-                        console.log('file status',fileUploadStatus);
-                        throw new Error(fileUploadStatus.error.message)
-                    }
-                    dataToSend.pathFileKtp = fileUploadStatus.data.path
+            // storage
+            if (file) {
+                let fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik + '-' + +new Date(), file)
+                if (fileUploadStatus.error) {
+                    setErrorFileUpload(fileUploadStatus.error.message)
+                    console.log('file status',fileUploadStatus);
+                    throw new Error(fileUploadStatus.error.message)
                 }
-            } catch (error) {
-                console.log('file', error);
+                dataToSend.pathFileKtp = fileUploadStatus.data.path
+            } else if (user?.pathFileKtp) {
+                dataToSend.pathFileKtp = user?.pathFileKtp
             }
 
-            try {
-                let rowStatus
-                if (user) {
-                    rowStatus = await supabase.from('users')
-                    .update(dataToSend)
-                    .eq('id', user.id)
-                    .select()
-                } else {
-                    rowStatus = await supabase.from('users').insert([dataToSend]).select()
-                }
-                if (rowStatus.error) {
-                    console.log('row status', rowStatus)
-                    setErrorInsertRow(rowStatus.error.message)
-                    throw new Error(rowStatus.error.message)
-                }
-            } catch (error) {
-                console.log('table error', error);
+            // table
+            let rowStatus
+            if (user) {
+                rowStatus = await supabase.from('users')
+                .update(dataToSend)
+                .eq('id', user.id)
+                .select()
+            } else {
+                rowStatus = await supabase.from('users').insert([dataToSend]).select()
             }
+            if (rowStatus.error) {
+                console.log('row status', rowStatus)
+                setErrorInsertRow(rowStatus.error.message)
+                throw new Error(rowStatus.error.message)
+            }
+            
             setIsLoading(false)
             searchParams.delete('q')
             setSearchParams(searchParams)
@@ -238,11 +231,17 @@ export default function Form() {
 
     async function handleDeleteFileKtp() {
         try {
-            const statusStorage = await supabase.storage.from('avatars').remove([user?.pathFileKtp]) // path file ktp itu sama kaya nik nya
-            if (statusStorage.error) throw new Error(statusStorage.error)
-            const statusTable = await supabase.storage.from('users').update({pathFileKtp: null}).eq('id', user?.id).select() 
+            const fileExist = await supabase.storage.from('fotoKtp').list('', {
+                search: user?.pathFileKtp
+            })
+            if (fileExist.data[0]) {
+                const statusStorage = await supabase.storage.from('avatars').remove([user?.pathFileKtp]) // path file ktp itu sama kaya nik nya
+                if (statusStorage.error) throw new Error(statusStorage.error)
+            }
+            const statusTable = await supabase.from('users').update({pathFileKtp: null}).eq('id', user?.id).select() 
             console.log(statusTable);
-            if (statusTable.error) throw new Error(statusStorage.error)
+            if (statusTable.error) throw new Error(statusTable.error)
+            setUser(statusTable.data[0])
             document.getElementById('modalDelete').close()
         } catch (error) {
             console.log(error)

@@ -30,6 +30,8 @@ export default function TableData({users, className}) {
                     <th>Pekerjaan</th>
                     <th>Kewarganegaraan</th>
                     <th>Berlaku Hingga</th>
+                    <th>Jalur File</th>
+                    <th>Tipe File</th>
                 </tr>
             </thead>
             <tbody>
@@ -51,6 +53,8 @@ export default function TableData({users, className}) {
                         <td>{user?.pekerjaan}</td>
                         <td>{user?.kewarganegaraan}</td>
                         <td>{formatDate(user?.berlakuHingga)}</td>
+                        <td>{user?.pathFileKtp}</td>
+                        <td>{user?.typeFileKtp}</td>
                     </tr>
                 )) || []}
             </tbody>

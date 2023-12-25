@@ -50,8 +50,13 @@ export default function Cari() {
     async function handleDelete() {
         try {
             if (user.pathFileKtp) {
-                const statusStorage = await supabase.storage.from('avatars').remove([user?.pathFileKtp]) // path file ktp itu sama kaya nik nya
-                console.log(statusStorage);
+                const fileExist = await supabase.storage.from('fotoKtp').list('', {
+                    search: user?.pathFileKtp
+                })
+                if (fileExist) {
+                    const statusStorage = await supabase.storage.from('avatars').remove([user?.pathFileKtp]) // path file ktp itu sama kaya nik nya
+                    console.log(statusStorage);
+                }
             }
             const {status} = await supabase
             .from('users')

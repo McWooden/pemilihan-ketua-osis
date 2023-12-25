@@ -1,17 +1,14 @@
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { bucketUrl, formatDate } from "../../../utils";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 
 export default function DisplayUser({data}) {
     const navigate = useNavigate()
     const locate = useLocation()
-    useEffect(() => {
-        console.log(data);
-    },[data])
     if (!data) return null
     return <div className="flex flex-col w-full max-w-xl gap-2">
-        {locate.pathname !== '/cari' && <div className="flex justify-end">
+        {locate.pathname !== '/cari' && <div className="flex justify-end gap-2">
+                <span className="btn btn-primary" onClick={() => navigate(`/form?q=${data?.id}`)}><FaExternalLinkAlt /> Edit</span>
                 <span className="btn btn-accent" onClick={() => navigate(`/cari?q=${data?.nik}`)}><FaExternalLinkAlt /> Cari detail</span>
             </div>
         }

@@ -29,7 +29,7 @@ function TotalKtp() {
     }, [dispatch])
 
     useEffect(() => {
-        if (!users) fetchUsers()
+        fetchUsers()
     }, [fetchUsers, users])
 
     return (
@@ -67,7 +67,7 @@ function TotalAdmin() {
     }, [dispatch])
 
     useEffect(() => {
-        if (!admins) fetchAdmins()
+        fetchAdmins()
     }, [fetchAdmins, admins])
 
     return (
