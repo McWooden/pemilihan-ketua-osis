@@ -4,12 +4,12 @@ import supabase from "../../../config/supabaseClient"
 import AlertError from "../../Utils/AlertError"
 import { useDispatch, useSelector } from "react-redux"
 import { setAdmins } from "../../../redux/source"
-import { MdRefresh } from "react-icons/md";
+import { MdRefresh } from "react-icons/md"
 import { useSearchParams } from "react-router-dom"
 import Alert from "../../Utils/Alert"
 import TableData from "../rekap/TableData"
 import { bucketUrl, dateFormat } from "../../../utils"
-import { FaRegTrashAlt } from "react-icons/fa";
+import { FaRegTrashAlt } from "react-icons/fa"
 
 // fitur edit
 export default function Form() {
@@ -24,6 +24,8 @@ export default function Form() {
     const [user, setUser] = useState(null)
     const [fetchError, setFetchError] = useState('')
     const [fetchEmpety, setFetchEmpety] = useState(false)
+    // handle data submit
+    const [isSomeFieldDefault, setIsSomeFieldDefault] = useState('')
 
     // field variable
     const [nik, setNik] = useState('')
@@ -72,24 +74,24 @@ export default function Form() {
     // effect when user is get
     useEffect(() => {
         if (!user) return
-        setNik(user?.nik || '');
-        setNama(user?.nama || '');
-        setTempatLahir(user?.tempatLahir || '');
-        setTanggalLahir(user?.tanggalLahir ? dateFormat(user.tanggalLahir) : '');
-        setJenisKelamin(user?.jenisKelamin || '-');
-        setGolonganDarah(user?.golonganDarah || '-');
-        setAlamat(user?.alamat || '');
-        setRt(user?.rt || 0);
-        setRw(user?.rw || 0);
-        setKelurahanDesa(user?.kelurahanDesa || '');
-        setKecamatan(user?.kecamatan || '');
-        setAgama(user?.agama || '-');
-        setStatusPerkawinan(user?.statusPerkawinan || '-');
-        setPekerjaan(user?.pekerjaan || '');
-        setKewarganegaraan(user?.kewarganegaraan || '-');
-        setBerlakuHingga(user?.tanggalLahir ? dateFormat(user.berlakuHingga) : '');
-        setFile(null);
-        setTypeFileKtp(user?.typeFileKtp || '-');
+        setNik(user?.nik || '')
+        setNama(user?.nama || '')
+        setTempatLahir(user?.tempatLahir || '')
+        setTanggalLahir(user?.tanggalLahir ? dateFormat(user.tanggalLahir) : '')
+        setJenisKelamin(user?.jenisKelamin || '-')
+        setGolonganDarah(user?.golonganDarah || '-')
+        setAlamat(user?.alamat || '')
+        setRt(user?.rt || 0)
+        setRw(user?.rw || 0)
+        setKelurahanDesa(user?.kelurahanDesa || '')
+        setKecamatan(user?.kecamatan || '')
+        setAgama(user?.agama || '-')
+        setStatusPerkawinan(user?.statusPerkawinan || '-')
+        setPekerjaan(user?.pekerjaan || '')
+        setKewarganegaraan(user?.kewarganegaraan || '-')
+        setBerlakuHingga(user?.tanggalLahir ? dateFormat(user.berlakuHingga) : '')
+        setFile(null)
+        setTypeFileKtp(user?.typeFileKtp || '-')
         setPengelolaId(user?.pengelolaId || '-')
     }, [user])
 
@@ -102,40 +104,78 @@ export default function Form() {
     })
 
     function resetAllField() {
-        setNik('');
-        setNama('');
-        setTempatLahir('');
-        setTanggalLahir('');
-        setJenisKelamin('-');
-        setGolonganDarah('-');
-        setAlamat('');
-        setRt(0);
-        setRw(0);
-        setKelurahanDesa('');
-        setKecamatan('');
-        setAgama('-');
-        setStatusPerkawinan('-');
-        setPekerjaan('');
-        setKewarganegaraan('-');
-        setBerlakuHingga('');
-        setFile(null);
-        setTypeFileKtp('image');
+        setNik('')
+        setNama('')
+        setTempatLahir('')
+        setTanggalLahir('')
+        setJenisKelamin('-')
+        setGolonganDarah('-')
+        setAlamat('')
+        setRt(0)
+        setRw(0)
+        setKelurahanDesa('')
+        setKecamatan('')
+        setAgama('-')
+        setStatusPerkawinan('-')
+        setPekerjaan('')
+        setKewarganegaraan('-')
+        setBerlakuHingga('')
+        setFile(null)
+        setTypeFileKtp('image')
     }
+
+    function findDefaultValue() {
+        let text = ''
+
+        if (nik === '') text += 'nik '
+        if (nama === '') text += 'nama '
+        if (tempatLahir === '') text += 'tempatLahir '
+        if (tanggalLahir === '') text += 'tanggalLahir '
+        if (jenisKelamin === '-') text += 'jenisKelamin '
+        if (golonganDarah === '-') text += 'golonganDarah '
+        if (alamat === '') text += 'alamat '
+        if (rt === 0) text += 'rt '
+        if (rw === 0) text += 'rw '
+        if (kelurahanDesa === '') text += 'kelurahanDesa '
+        if (kecamatan === '') text += 'kecamatan '
+        if (agama === '-') text += 'agama '
+        if (statusPerkawinan === '-') text += 'statusPerkawinan '
+        if (pekerjaan === '') text += 'pekerjaan '
+        if (kewarganegaraan === '-') text += 'kewarganegaraan '
+        if (berlakuHingga === '') text += 'berlakuHingga '
+        if (file === null) text += 'fotoKtp '
+        if (pengelolaId === '-') text += 'pengelolaId '
+
+        return text
+    }
+
 
     async function handleSubmit(e) {
         e.preventDefault()
+        const isDefaultValueHere = findDefaultValue()
+        
+        if (isDefaultValueHere) {
+            setIsSomeFieldDefault(isDefaultValueHere)
+            return document.getElementById('modalFieldDefault').showModal()
+        }
+        
+        submitTheForm()
+    }
+
+    async function submitTheForm() {
         setIsLoading(true)
         setErrorFileUpload(false)
         setErrorInsertRow(false)
+        setIsSomeFieldDefault('')
         let dataToSend = {
             nik, nama,
-            tempatLahir, tanggalLahir,
+            tempatLahir, tanggalLahir: tanggalLahir ? tanggalLahir : null,
             jenisKelamin, golonganDarah,
             alamat, rt, rw, kelurahanDesa, kecamatan,
             agama, statusPerkawinan, pekerjaan, kewarganegaraan,
-            pathFileKtp: nik, typeFileKtp, berlakuHingga, pengelolaId
+            pathFileKtp: nik, typeFileKtp, berlakuHingga: berlakuHingga ? berlakuHingga : null , pengelolaId
         }
-        console.log(dataToSend);
+        console.log(dataToSend)
         try {
             if (file) {
                 const fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik, file, { upsert: true })
@@ -147,7 +187,7 @@ export default function Form() {
             }
 
             
-            let rowStatus;
+            let rowStatus
             if (user) {
                 rowStatus = await supabase.from('users')
                 .update(dataToSend)
@@ -157,7 +197,7 @@ export default function Form() {
                 rowStatus = await supabase.from('users').insert([dataToSend]).select()
             }
             if (rowStatus.error) {
-                console.log(rowStatus.error);
+                console.log(rowStatus.error)
                 setErrorInsertRow(rowStatus.error.message)
                 throw new Error(rowStatus.error.message)
             }
@@ -166,6 +206,7 @@ export default function Form() {
             setSearchParams(searchParams)
             setUser(null)
             resetAllField()
+            document.getElementById('modalFieldDefault').close()
         } catch (error) {
             return setIsLoading(false)
         }
@@ -407,16 +448,24 @@ export default function Form() {
                 </select>
             </label>
             <label className="form-control w-full max-w-lg">
-                    <div className="label">
-                        <span className="label-text">Berlaku Hingga</span>
+                <div className="label">
+                    <span className="label-text">Berlaku Hingga</span>
+                </div>
+                <input
+                    value={berlakuHingga}
+                    onChange={(e) => setBerlakuHingga(e.target.value)}
+                    type="date"
+                    className="input input-bordered w-full"
+                />
+            </label>
+            {user && user.pathFileKtp && <div className="p-2 pb-4 rounded shadow bg-base-200 flex flex-col gap-2 w-full max-w-lg">
+                    {user.typeFileKtp === 'image' && <img src={bucketUrl + user.pathFileKtp} alt="foto ktp pengguna" className={`w-full ${file && 'blur-sm'}`}/>}
+                    {user.typeFileKtp === 'document' && <iframe src={bucketUrl + user.pathFileKtp} width="100%" title="user pdf" className={`${file && 'blur-sm'}`}/>}
+                    <div className="flex">
+                        {file && <span className="bg-error p-2 rounded flex items-center">File ini akan ditimpa dengan file baru!</span>}
+                        <button className="btn btn-error w-fit ml-auto" onClick={()=>document.getElementById('modalDelete').showModal()}><FaRegTrashAlt /></button>
                     </div>
-                    <input
-                        value={berlakuHingga}
-                        onChange={(e) => setBerlakuHingga(e.target.value)}
-                        type="date"
-                        className="input input-bordered w-full"
-                    />
-                </label>
+                </div>}
             <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
                 <div className="w-full max-w-lg relative" {...getRootProps()}>
                     <div className="label">
@@ -450,12 +499,7 @@ export default function Form() {
                     </select>
                 </label>
             </div>
-            <div className="w-full max-w-lg flex flex-col">
-                {user && user.pathFileKtp && <div className="p-2 pb-4 rounded shadow bg-base-300 flex flex-col gap-2">
-                    {typeFileKtp === 'image' && <img src={bucketUrl + user.pathFileKtp} alt="foto ktp pengguna" className="w-full"/>}
-                    {typeFileKtp === 'document' && <iframe src={bucketUrl + user.pathFileKtp} width="100%" title="user pdf"/>}
-                    <button className="btn btn-error w-fit self-end" onClick={()=>document.getElementById('modalDelete').showModal()}><FaRegTrashAlt /></button>
-                </div>}
+            <div className="w-full max-w-lg flex flex-col gap-2">
                 {file && <>
                     {typeFileKtp === 'image' && <img src={URL.createObjectURL(file)} alt="foto ktp pengguna" className="w-full"/>}
                     {typeFileKtp === 'document' && <iframe src={URL.createObjectURL(file)} width="100%" title="user pdf"/>}
@@ -481,12 +525,24 @@ export default function Form() {
         <dialog id="modalDelete" className="modal">
             <div className="modal-box">
                 <h3 className="font-bold text-lg">Buang Gambar Lama</h3>
-                <p className="py-4">File akan dihapus dan data terkait akan diperbarui setelahnya</p>
+                <p className="py-4">File akan dihapus dan data terkait akan diperbarui setelahnya sekarang?</p>
                 <div className="modal-action">
-                <form method="dialog">
-                    <button className="btn">Tutup</button>
-                </form>
-                <button className="btn btn-error" onClick={handleDeleteFileKtp}>Lanjutkan</button>
+                    <form method="dialog">
+                        <button className="btn">Tutup</button>
+                    </form>
+                    <button className="btn btn-error" onClick={handleDeleteFileKtp}>Lanjutkan</button>
+                </div>
+            </div>
+        </dialog>
+        <dialog id="modalFieldDefault" className="modal">
+            <div className="modal-box">
+                <h3 className="font-bold text-lg">Field kosong</h3>
+                <p className="py-4">Kamu belum menyelesaikan {isSomeFieldDefault}</p>
+                <div className="modal-action">
+                    <form method="dialog">
+                        <button className="btn">Tutup</button>
+                    </form>
+                    <button className="btn btn-accent" onClick={submitTheForm}>Lanjutkan</button>
                 </div>
             </div>
         </dialog>
