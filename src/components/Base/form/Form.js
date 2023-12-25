@@ -51,29 +51,16 @@ export default function Form() {
         setFile(acceptFiles[0])
     }, [])
 
+    useEffect(() => {
+        console.log('file', file);
+    },[file])
+
     // define hook
     let [searchParams, setSearchParams] = useSearchParams()
     const dispatch = useDispatch()
 
-    // fetch data
-    const fetchData = useCallback(async () => {
-        setFetchError('')
-        setFetchEmpety(false)
-        const { data, error } = await supabase.from("users").select("*").eq('id', searchParams.get('q'))
-        if (error) return setFetchError(error.message)
-
-        if (!data.length) setFetchEmpety(true)
-        setUser(data[0])
-    }, [searchParams])
-
-    // fetch when there a query
-    useEffect(() => {
-        if (searchParams.get('q')) fetchData()
-    }, [fetchData, searchParams])
-
-    // effect when user is get
-    useEffect(() => {
-        if (!user) return
+    // field user
+    function setFieldToUser(user) {
         setNik(user?.nik || '')
         setNama(user?.nama || '')
         setTempatLahir(user?.tempatLahir || '')
@@ -90,10 +77,25 @@ export default function Form() {
         setPekerjaan(user?.pekerjaan || '')
         setKewarganegaraan(user?.kewarganegaraan || '-')
         setBerlakuHingga(user?.tanggalLahir ? dateFormat(user.berlakuHingga) : '')
-        setFile(null)
-        setTypeFileKtp(user?.typeFileKtp || '-')
+        setTypeFileKtp(user?.typeFileKtp || 'image')
         setPengelolaId(user?.pengelolaId || '-')
-    }, [user])
+    }
+    // fetch data
+    const fetchData = useCallback(async () => {
+        setFetchError('')
+        setFetchEmpety(false)
+        const { data, error } = await supabase.from("users").select("*").eq('id', searchParams.get('q'))
+        if (error) return setFetchError(error.message)
+
+        if (!data.length) setFetchEmpety(true)
+        setUser(data[0])
+        setFieldToUser(data[0])
+    }, [searchParams])
+
+    // fetch when there a query
+    useEffect(() => {
+        if (searchParams.get('q') && !user) fetchData()
+    }, [fetchData, searchParams, user])
 
     const {getRootProps, getInputProps, isDragActive, isDragReject, isDragAccept} = useDropzone({
         onDrop,
@@ -153,6 +155,7 @@ export default function Form() {
     async function handleSubmit(e) {
         e.preventDefault()
         const isDefaultValueHere = findDefaultValue()
+
         
         if (isDefaultValueHere) {
             setIsSomeFieldDefault(isDefaultValueHere)
@@ -166,6 +169,7 @@ export default function Form() {
         setIsLoading(true)
         setErrorFileUpload(false)
         setErrorInsertRow(false)
+        document.getElementById('modalFieldDefault').close()
         setIsSomeFieldDefault('')
         let dataToSend = {
             nik, nama,
@@ -173,14 +177,14 @@ export default function Form() {
             jenisKelamin, golonganDarah,
             alamat, rt, rw, kelurahanDesa, kecamatan,
             agama, statusPerkawinan, pekerjaan, kewarganegaraan,
-            pathFileKtp: nik, typeFileKtp, berlakuHingga: berlakuHingga ? berlakuHingga : null , pengelolaId
+            pathFileKtp: '', typeFileKtp, berlakuHingga: berlakuHingga ? berlakuHingga : null , pengelolaId: pengelolaId === '-' ? null : pengelolaId
         }
-        console.log(dataToSend)
         try {
             if (file) {
-                const fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik, file, { upsert: true })
+                let fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik, file, { upsert: true })
                 if (fileUploadStatus.error) {
                     setErrorFileUpload(fileUploadStatus.error.message)
+                    console.log(fileUploadStatus.error);
                     throw new Error(fileUploadStatus.error.message)
                 }
                 dataToSend.pathFileKtp = fileUploadStatus.data.path
@@ -206,8 +210,8 @@ export default function Form() {
             setSearchParams(searchParams)
             setUser(null)
             resetAllField()
-            document.getElementById('modalFieldDefault').close()
         } catch (error) {
+            console.log(error);
             return setIsLoading(false)
         }
     }
@@ -229,10 +233,12 @@ export default function Form() {
         try {
             const statusStorage = await supabase.storage.from('avatars').remove([user?.pathFileKtp]) // path file ktp itu sama kaya nik nya
             if (statusStorage.error) throw new Error(statusStorage.error)
-            setUser({...user, pathFileKtp: null})
+            const statusTable = await supabase.storage.from('users').update({pathFileKtp: null}).eq('id', user?.id).select() 
+            console.log(statusTable);
+            if (statusTable.error) throw new Error(statusStorage.error)
             document.getElementById('modalDelete').close()
         } catch (error) {
-            
+            console.log(error)
         }
     }
 
@@ -269,7 +275,6 @@ export default function Form() {
                     type="number"
                     placeholder="Ketik 16 digit disini"
                     className="input input-bordered w-full"
-                    maxLength={16} minLength={16}
                     required
                 />
             </label>
@@ -458,53 +463,58 @@ export default function Form() {
                     className="input input-bordered w-full"
                 />
             </label>
-            {user && user.pathFileKtp && <div className="p-2 pb-4 rounded shadow bg-base-200 flex flex-col gap-2 w-full max-w-lg">
+            {user && user.pathFileKtp ? <div className="p-2 pb-4 rounded shadow bg-base-200 flex flex-col gap-2 w-full max-w-lg">
                     {user.typeFileKtp === 'image' && <img src={bucketUrl + user.pathFileKtp} alt="foto ktp pengguna" className={`w-full ${file && 'blur-sm'}`}/>}
                     {user.typeFileKtp === 'document' && <iframe src={bucketUrl + user.pathFileKtp} width="100%" title="user pdf" className={`${file && 'blur-sm'}`}/>}
-                    <div className="flex">
-                        {file && <span className="bg-error p-2 rounded flex items-center">File ini akan ditimpa dengan file baru!</span>}
-                        <button className="btn btn-error w-fit ml-auto" onClick={()=>document.getElementById('modalDelete').showModal()}><FaRegTrashAlt /></button>
+                    <div className="flex gap-2">
+                        {file && <span className="bg-error p-2 rounded-xl flex items-center">File ini harus dihapus dahulu sebelum file baru di upload!</span>}
+                        <span className="btn btn-error w-fit ml-auto" onClick={()=>document.getElementById('modalDelete').showModal()}><FaRegTrashAlt /></span>
                     </div>
-                </div>}
-            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-                <div className="w-full max-w-lg relative" {...getRootProps()}>
-                    <div className="label">
-                        <span className="label-text">Foto KTP</span>
-                    </div>
-                    <input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neutral text-neutral file:text-neutral-content cursor-pointer" accept="image/jpg,.pdf" {...getInputProps()} style={{display: 'block'}}
-                        onChange={(x) => {
-                            onDrop(x.target.files)
-                        }}
-                    />
-                    <div className="label">
-                        <span className="label-text">klik atau jatuhkan disini</span>
-                        <span className="label-text-alt">pdf dan jpg/jpeg</span>
-                    </div>
-                    {isDragActive && 
-                        <div className={`absolute top-0 bottom-0 right-0 left-0 ${isDragAccept && 'bg-neutral/75 text-neutral-content'} ${isDragReject && 'bg-error/75 text-error-content'} z-[2] text-xl p-4`}>
-                            <div className={`border border-dashed ${isDragAccept && 'border-neutral-content'} ${isDragReject && 'border-error-content'} border-8 w-full h-full grid place-items-center`}>
-                                {isDragAccept && <p>File diterima</p>}
-                                {isDragReject && <p>Hanya menerima pdf dan jpg</p>}
-                            </div>
-                        </div>
-                    }
                 </div>
-                <label className="form-control w-full max-w-lg">
-                    <div className="label">
-                        <span className="label-text">Tipe File</span>
+                :
+                <>
+                <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                    <div className="w-full max-w-lg relative" {...getRootProps()}>
+                        <div className="label">
+                            <span className="label-text">Foto KTP</span>
+                        </div>
+                        <input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neutral text-neutral file:text-neutral-content cursor-pointer" accept="image/jpg,.pdf" {...getInputProps()} style={{display: 'block'}}
+                            onChange={(x) => {
+                                onDrop(x.target.files)
+                            }}
+                        />
+                        <div className="label">
+                            <span className="label-text">klik atau jatuhkan disini</span>
+                            <span className="label-text-alt">pdf dan jpg/jpeg</span>
+                        </div>
+                        {isDragActive && 
+                            <div className={`absolute top-0 bottom-0 right-0 left-0 ${isDragAccept && 'bg-neutral/75 text-neutral-content'} ${isDragReject && 'bg-error/75 text-error-content'} z-[2] text-xl p-4`}>
+                                <div className={`border border-dashed ${isDragAccept && 'border-neutral-content'} ${isDragReject && 'border-error-content'} border-8 w-full h-full grid place-items-center`}>
+                                    {isDragAccept && <p>File diterima</p>}
+                                    {isDragReject && <p>Hanya menerima pdf dan jpg</p>}
+                                </div>
+                            </div>
+                        }
                     </div>
-                    <select className="select select-bordered" value={typeFileKtp} onChange={(e) => setTypeFileKtp(e.target.value)}>
-                        <option value='image'>image/jpeg,jpg</option>
-                        <option value='document'>application/pdf</option>
-                    </select>
-                </label>
-            </div>
-            <div className="w-full max-w-lg flex flex-col gap-2">
-                {file && <>
-                    {typeFileKtp === 'image' && <img src={URL.createObjectURL(file)} alt="foto ktp pengguna" className="w-full"/>}
-                    {typeFileKtp === 'document' && <iframe src={URL.createObjectURL(file)} width="100%" title="user pdf"/>}
-                </>}
-            </div>
+                    <label className="form-control w-full max-w-lg">
+                        <div className="label">
+                            <span className="label-text">Tipe File</span>
+                        </div>
+                        <select className="select select-bordered" value={typeFileKtp} onChange={(e) => setTypeFileKtp(e.target.value)}>
+                            <option value='image'>image/jpeg,jpg</option>
+                            <option value='document'>application/pdf</option>
+                        </select>
+                    </label>
+                </div>
+                <div className="w-full max-w-lg flex flex-col gap-2">
+                    {file && <>
+                        {typeFileKtp === 'image' && <img src={URL.createObjectURL(file)} alt="foto ktp pengguna" className="w-full"/>}
+                        {typeFileKtp === 'document' && <iframe src={URL.createObjectURL(file)} width="100%" title="user pdf"/>}
+                    </>}
+                    {file?.name} {typeFileKtp}
+                </div>
+            </>
+            }
             <div className="flex w-full max-w-lg gap-2 items-center">
                 <label className="form-control w-full max-w-lg">
                     <div className="label">
@@ -512,13 +522,13 @@ export default function Form() {
                     </div>
                     <select className="select select-bordered" value={pengelolaId} onChange={(e) => setPengelolaId(e.target.value)}>
                         <option disabled value='-'>Pilih satu</option>
-                        {admins?.map(admin => <option key={admin.id}>{admin.username}</option>) || ''}
+                        {admins?.map(admin => <option key={admin.id} value={admin.id}>{admin.username}</option>) || ''}
                     </select>
                 </label>
                 {fetchAdminsError && <div className="btn btn-primary text-primary-content text-xl tooltip grid place-items-center" data-tip="Segarkan" onClick={fetchAdmins}><MdRefresh/></div>}
             </div>
             <div className="flex gap-2 max-w-md w-full  mt-4">
-                {user && <span className={`btn btn-secondary`} onClick={handleCancelEdit}>Batalkan</span>}
+                {user && <span className={`btn btn-secondary`} onClick={handleCancelEdit}>Batalkan</span>} 
                 {isloading ? <span className={`btn ${user ? 'btn-primary' : 'btn-accent'} flex-1`}>Loading</span> : <button className={`btn ${user ? 'btn-primary' : 'btn-accent'} flex-1`}>{user? 'Simpan' : 'Tambah'}</button>}
             </div>
         </form>

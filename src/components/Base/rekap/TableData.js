@@ -34,7 +34,7 @@ export default function TableData({users, className}) {
             </thead>
             <tbody>
                 {users?.map(user => (
-                    <tr className="hover" key={user?.nik || +new Date()} onClick={() => handleDetailUser(user)}>
+                    <tr className="hover" key={user?.id} onClick={() => handleDetailUser(user)}>
                         <th>{user?.id}</th>
                         <td>{user?.nik}</td>
                         <td>{user?.nama}</td>

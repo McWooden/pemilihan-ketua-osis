@@ -17,6 +17,7 @@ export default function Rekap() {
         const {data, error} = await supabase.from('users').select('*')
         if (error) return setFetchError(true)
         dispatch(setUsers(data))
+        console.log(data);
     },[dispatch])
 
     useEffect(() => {

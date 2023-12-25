@@ -1,8 +1,20 @@
+import { FaExternalLinkAlt } from "react-icons/fa";
 import { bucketUrl, formatDate } from "../../../utils";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function DisplayUser({data}) {
+    const navigate = useNavigate()
+    const locate = useLocation()
+    useEffect(() => {
+        console.log(data);
+    },[data])
     if (!data) return null
-    return <div className="flex flex-col w-full max-w-xl">
+    return <div className="flex flex-col w-full max-w-xl gap-2">
+        {locate.pathname !== '/cari' && <div className="flex justify-end">
+                <span className="btn btn-accent" onClick={() => navigate(`/cari?q=${data?.nik}`)}><FaExternalLinkAlt /> Cari detail</span>
+            </div>
+        }
         {data?.pathFileKtp && <>
             {data?.typeFileKtp === 'image' && <img src={bucketUrl + data?.pathFileKtp} alt="foto ktp pengguna" className="w-full shadow rounded"/>}
             {data?.typeFileKtp === 'document' && <iframe src={bucketUrl + data?.pathFileKtp} width="100%" title="user pdf" className="rounded shadow"/>}
@@ -63,6 +75,12 @@ export default function DisplayUser({data}) {
                     <tr className="hover">
                         <td>Berlaku Hingga</td>
                         <td>{formatDate(data?.berlakuHingga)}</td>
+                    </tr>
+                    <tr className="hover">
+                        <td>Path File</td>
+                        <td>{data.pathFileKtp}</td>
+                        <td>Tipe File</td>
+                        <td>{data.typeFileKtp}</td>
                     </tr>
                 </tbody>
             </table>
