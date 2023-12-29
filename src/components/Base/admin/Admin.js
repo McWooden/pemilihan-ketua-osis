@@ -17,7 +17,7 @@ export default function Admin() {
     const fetchAdmins = useCallback(async () => {
         setIsloading(true)
         setFetchError(false)
-        const { data, error } = await supabase.from("admins").select("id, username")
+        const { data, error } = await supabase.from("admins").select("*")
         
         if (error) {
             setFetchError(true)
@@ -25,14 +25,15 @@ export default function Admin() {
             return
         }
         if (data) {
+            console.log(admins)
             dispatch(setAdmins(data))
             setIsloading(false)
         }
-    }, [dispatch])
+    }, [admins, dispatch])
 
     useEffect(() => {
-        fetchAdmins()
-    }, [fetchAdmins])
+        if (!admins) fetchAdmins()
+    }, [admins, fetchAdmins])
 
     return <div className="h-full flex flex-col gap-2">
         <div className="stats shadow">

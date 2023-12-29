@@ -1,5 +1,6 @@
 import moment from "moment"
-import store from "./redux/store"
+// import store from "./redux/store"
+import supabase from "./config/supabaseClient";
 
 export const bucketUrl = 'https://fsgktjbbbupsvnqqaepk.supabase.co/storage/v1/object/public/fotoKtp/'
 
@@ -19,10 +20,12 @@ export function verifyAdmin(data) {
   return data.username === process.env.REACT_APP_USERNAME && data.password === process.env.REACT_APP_PASSWORD
 }
 
-export function verifiedAccount() {
-  const account = store.getState().source?.account || {}
-  return account.username === process.env.REACT_APP_USERNAME && account.password === process.env.REACT_APP_PASSWORD
-}
+// export async function verifiedAccount() {
+//   const {data, error} = await supabase.from('admins').select('*').eq(store.getState().source?.account)
+//   const account = store.getState().source?.account || {}
+//   if (error || !data.length) return false
+//   return account.username === process.env.REACT_APP_USERNAME && account.password === process.env.REACT_APP_PASSWORD
+// }
 
 export function setLocalStorage(name, value) {
   return localStorage.setItem(name, JSON.stringify(value))

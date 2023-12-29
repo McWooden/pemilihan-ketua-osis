@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import MyErrorBoundary from './MyErrorBoundary';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import store from './redux/store'
+import store from './redux/store.js'
 import Login from './components/login/Login';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

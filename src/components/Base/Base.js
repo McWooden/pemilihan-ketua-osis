@@ -1,5 +1,4 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
-import { verifiedAccount } from '../../utils'
 import Dashboard from './dashboard/Dashboard'
 import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
@@ -7,6 +6,8 @@ import Rekap from './rekap/Rekap'
 import Cari from './cari/Cari'
 import Admin from './admin/Admin'
 import Form from './form/Form'
+import supabase from '../../config/supabaseClient'
+import { setAccount } from '../../redux/source'
 
 export default function Base() {
     const account = useSelector(state => state.source.account)
@@ -15,8 +16,17 @@ export default function Base() {
     const location = useLocation()
 
     useEffect(() => {
-        if (!verifiedAccount()) return navigate('/login')
-    },[account, navigate])
+        supabase.auth.onAuthStateChange((event, session) => {
+            setAccount(session?.user ?? null)
+            if (event === 'SIGNED_OUT') {
+                navigate('/login')
+            }
+        })
+    }, [navigate])
+
+    if (!account) {
+        return navigate('/login')
+    }
 
     const drawerList = ['dashboard', 'cari', 'form', 'rekap', 'admin']
 
@@ -32,7 +42,7 @@ export default function Base() {
                     <div className="flex-1">
                         <p className="text-xl">Osis</p>
                     </div>
-                    <div className="navbar-end">
+                    <div className="navbar-end" onClick={() => supabase.auth.signOut()}>
                         <p className="btn">Logout</p>
                     </div>
                 </div>

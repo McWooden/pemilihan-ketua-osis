@@ -34,8 +34,8 @@ export default function Rekap() {
     },[dispatch])
 
     useEffect(() => {
-        fetchUsers()
-    },[fetchUsers])
+        if (!users) fetchUsers()
+    },[fetchUsers, users])
 
     function handleDownload() {
         const columns = [
