@@ -1,6 +1,6 @@
 import moment from "moment"
 // import store from "./redux/store"
-import supabase from "./config/supabaseClient";
+// import supabase from "./config/supabaseClient";
 
 export const bucketUrl = 'https://fsgktjbbbupsvnqqaepk.supabase.co/storage/v1/object/public/fotoKtp/'
 
