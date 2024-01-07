@@ -40,7 +40,7 @@ export default function Base() {
                         </label>
                     </div>
                     <div className="flex-1">
-                        <p className="text-xl">Osis</p>
+                        <p className="text-md">Caleg Perindo</p>
                     </div>
                     <div className="navbar-end" onClick={() => supabase.auth.signOut()}>
                         <p className="btn">Logout</p>
