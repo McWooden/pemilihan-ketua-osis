@@ -2,20 +2,23 @@ import { useCallback, useEffect, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import supabase from "../../../config/supabaseClient"
 import AlertError from "../../Utils/AlertError"
-import { useDispatch, useSelector } from "react-redux"
-import { setAdmins } from "../../../redux/source"
-import { MdRefresh } from "react-icons/md"
+// import { useDispatch, useSelector } from "react-redux"
+// import { setAdmins } from "../../../redux/source"
+// import { MdRefresh } from "react-icons/md"
 import { useSearchParams } from "react-router-dom"
 import Alert from "../../Utils/Alert"
 import TableData from "../rekap/TableData"
-import { bucketUrl, dateFormat } from "../../../utils"
+import { bucketUrl, capitalizeName, dateFormat } from "../../../utils"
 import { FaRegTrashAlt } from "react-icons/fa"
+import { IoChevronForward, IoChevronDownSharp } from "react-icons/io5";
 
 // fitur edit
 export default function Form() {
+    // component variable
+    const [showMoreField, setShowMoreField] = useState(false)
     // admins variable
-    const admins = useSelector(state => state.source.admins)
-    const [fetchAdminsError, setFetchAdminsError] = useState(false)
+    // const admins = useSelector(state => state.source.admins)
+    // const [fetchAdminsError, setFetchAdminsError] = useState(false)
     // handling fetch
     const [isloading, setIsLoading] = useState(false)
     const [errorFileUpload, setErrorFileUpload] = useState(false)
@@ -46,14 +49,15 @@ export default function Form() {
     const [berlakuHingga, setBerlakuHingga] = useState('')
     const [file, setFile] = useState(null)
     const [typeFileKtp, setTypeFileKtp] = useState('image')
-    const [pengelolaId, setPengelolaId] = useState('-')
+    // const [pengelolaId, setPengelolaId] = useState('-')
+    const [simpul, setSimpul] = useState('')
     const onDrop = useCallback(acceptFiles => {
         setFile(acceptFiles[0])
     }, [])
 
     // define hook
     let [searchParams, setSearchParams] = useSearchParams()
-    const dispatch = useDispatch()
+    // const dispatch = useDispatch()
 
     // field user
     function setFieldToUser(user) {
@@ -74,7 +78,8 @@ export default function Form() {
         setKewarganegaraan(user?.kewarganegaraan || '-')
         setBerlakuHingga(user?.tanggalLahir ? dateFormat(user.berlakuHingga) : '')
         setTypeFileKtp(user?.typeFileKtp || 'image')
-        setPengelolaId(user?.pengelolaId || '-')
+        // setPengelolaId(user?.pengelolaId || '-')
+        setSimpul(user?.simpul || '')
     }
     // fetch data
     const fetchData = useCallback(async () => {
@@ -142,11 +147,11 @@ export default function Form() {
         if (kewarganegaraan === '-') text += 'kewarganegaraan '
         if (berlakuHingga === '') text += 'berlakuHingga '
         if (file === null && !user?.pathFileKtp) text += 'fotoKtp '
-        if (pengelolaId === '-') text += 'pengelolaId '
+        // if (pengelolaId === '-') text += 'pengelolaId '
+        if (simpul === '') text += 'simpulPengelola '
 
         return text
     }
-
 
     async function handleSubmit(e) {
         e.preventDefault()
@@ -173,14 +178,16 @@ export default function Form() {
             jenisKelamin, golonganDarah,
             alamat, rt, rw, kelurahanDesa, kecamatan,
             agama, statusPerkawinan, pekerjaan, kewarganegaraan,
-            pathFileKtp: '', typeFileKtp, berlakuHingga: berlakuHingga ? berlakuHingga : null , pengelolaId: pengelolaId === '-' ? null : pengelolaId
+            pathFileKtp: '', typeFileKtp, berlakuHingga: berlakuHingga ? berlakuHingga : null , 
+            // pengelolaId: pengelolaId === '-' ? null : pengelolaId
+            simpul
         }
         try {
             // storage
             if (file) {
                 let fileUploadStatus = await supabase.storage.from('fotoKtp').upload(nik + '-' + +new Date(), file)
                 if (fileUploadStatus.error) {
-                    setErrorFileUpload(fileUploadStatus.error.message)
+                    setErrorFileUpload(fileUploadStatus.error.details)
                     console.log('file status',fileUploadStatus);
                     throw new Error(fileUploadStatus.error.message)
                 }
@@ -201,7 +208,7 @@ export default function Form() {
             }
             if (rowStatus.error) {
                 console.log('row status', rowStatus)
-                setErrorInsertRow(rowStatus.error.message)
+                setErrorInsertRow(rowStatus.error.details)
                 throw new Error(rowStatus.error.message)
             }
             
@@ -216,18 +223,18 @@ export default function Form() {
         }
     }
 
-    const fetchAdmins = useCallback(async () => {
-        setFetchAdminsError(false)
-        const { data, error } = await supabase.from("admins").select("id, username")
+    // const fetchAdmins = useCallback(async () => {
+    //     setFetchAdminsError(false)
+    //     const { data, error } = await supabase.from("admins").select("id, username")
         
-        if (error) return setFetchAdminsError(true)
+    //     if (error) return setFetchAdminsError(true)
 
-        dispatch(setAdmins(data))
-    }, [dispatch])
+    //     dispatch(setAdmins(data))
+    // }, [dispatch])
 
-    useEffect(() => {
-        if (!admins) fetchAdmins()
-    },[admins, fetchAdmins])
+    // useEffect(() => {
+    //     if (!admins) fetchAdmins()
+    // },[admins, fetchAdmins])
 
     async function handleDeleteFileKtp() {
         try {
@@ -274,6 +281,14 @@ export default function Form() {
             <label className="form-control w-full max-w-lg">
                 <div className="label">
                     <span className="label-text">Nomor Induk Kependudukan</span>
+                    <div className="flex gap-2">
+                        <div className={`badge badge-primary ${nik.length !== 16 && 'badge-outline'} grid place-items-center`}>
+                            {nik.length}
+                        </div>
+                        <div className="tooltip badge badge-primary badge-outline grid place-items-center" data-tip="Wajib Unik">
+                            *
+                        </div>
+                    </div>
                 </div>
                 <input
                     value={nik}
@@ -282,193 +297,202 @@ export default function Form() {
                     placeholder="Ketik 16 digit disini"
                     className="input input-bordered w-full"
                     required
+                    min={0}
                 />
             </label>
             <label className="form-control w-full max-w-lg">
                 <div className="label">
                     <span className="label-text">Nama</span>
+                    <div className="tooltip badge badge-primary badge-outline grid place-items-center" data-tip="Wajib">
+                        *
+                    </div>
                 </div>
                 <input
                     value={nama}
-                    onChange={(e) => setNama(e.target.value)}
+                    onChange={e => setNama(e.target.value)}
                     type="text"
                     placeholder="Ketik disini"
                     className="input input-bordered w-full"
+                    required
+                    onBlur={() => setNama(capitalizeName(nama))}
                 />
             </label>
-            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-                <label className="form-control w-full">
+            <div className="btn rounded flex items-center gap-2 justify-between w-full max-w-lg" onClick={() => setShowMoreField(prev => !prev)}>Tampilkan Lainnya {showMoreField ? <IoChevronDownSharp className="text-xl" /> : <IoChevronForward className="text-xl" />}</div>
+            { showMoreField && <>
+                <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">Tempat Lahir</span>
+                        </div>
+                        <input
+                            value={tempatLahir}
+                            onChange={(e) => setTempatLahir(e.target.value)}
+                            type="text"
+                            placeholder="Ketik disini"
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">Tanggal Lahir</span>
+                        </div>
+                        <input
+                            value={tanggalLahir}
+                            onChange={(e) => setTanggalLahir(e.target.value)}
+                            type="date"
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                </div>
+                <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">Jenis Kelamin</span>
+                        </div>
+                        <select className="select select-bordered" value={jenisKelamin} onChange={(e) => setJenisKelamin(e.target.value)}>
+                            <option disabled value='-'>Pilih satu</option>
+                            <option value='Laki-laki'>Laki-laki</option>
+                            <option value='Perempuan'>Perempuan</option>
+                        </select>
+                    </label>
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">Gol Darah</span>
+                        </div>
+                        <select className="select select-bordered" value={golonganDarah} onChange={(e) => setGolonganDarah(e.target.value)}>
+                            <option disabled value='-'>Pilih satu</option>
+                            <option value='A'>A</option>
+                            <option value='B'>B</option>
+                            <option value='AB'>AB</option>
+                            <option value='O'>O</option>
+                        </select>
+                    </label>
+                </div>
+                <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                    <label className="form-control w-full flex-1">
+                        <div className="label">
+                            <span className="label-text">Alamat</span>
+                        </div>
+                        <input
+                            value={alamat}
+                            onChange={(e) => setAlamat(e.target.value)}
+                            type="text"
+                            placeholder="Ketik disini"
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <div className="flex gap-2 max-w-lg flex-1">
+                        <label className="form-control w-full">
+                            <div className="label">
+                                <span className="label-text">RT</span>
+                            </div>
+                            <input
+                                value={rt}
+                                onChange={(e) => setRt(e.target.value)}
+                                type="number"
+                                placeholder="Ketik disini"
+                                className="input input-bordered w-full"
+                            />
+                        </label>
+                        <label className="form-control w-full">
+                            <div className="label">
+                                <span className="label-text">RW</span>
+                            </div>
+                            <input
+                                value={rw}
+                                onChange={(e) => setRw(e.target.value)}
+                                type="number"
+                                placeholder="Ketik disini"
+                                className="input input-bordered w-full"
+                            />
+                        </label>
+                    </div>
+                </div>
+                <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">Kel/Desa</span>
+                        </div>
+                        <input
+                            value={kelurahanDesa}
+                            onChange={(e) => setKelurahanDesa(e.target.value)}
+                            type="text"
+                            placeholder="Ketik disini"
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">Kecamatan</span>
+                        </div>
+                        <input
+                            value={kecamatan}
+                            onChange={(e) => setKecamatan(e.target.value)}
+                            type="text"
+                            placeholder="Ketik disini"
+                            className="input input-bordered w-full"
+                        />
+                    </label>
+                </div>
+                <label className="form-control w-full max-w-lg">
                     <div className="label">
-                        <span className="label-text">Tempat Lahir</span>
+                        <span className="label-text">Agama</span>
+                    </div>
+                    <select className="select select-bordered" value={agama} onChange={(e) => setAgama(e.target.value)}>
+                        <option disabled value='-'>Pilih satu</option>
+                        <option value='Islam<'>Islam</option>
+                        <option value='Kristen'>Kristen</option>
+                        <option value='Katolik'>Katolik</option>
+                        <option value='Hindu<'>Hindu</option>
+                        <option value='Buddha'>Buddha</option>
+                        <option value='Khonghucu'>Khonghucu</option>
+                    </select>
+                </label>
+                <label className="form-control w-full max-w-lg">
+                    <div className="label">
+                        <span className="label-text">Status perkawinan</span>
+                    </div>
+                    <select className="select select-bordered" value={statusPerkawinan} onChange={(e) => setStatusPerkawinan(e.target.value)}>
+                        <option disabled value='-'>Pilih satu</option>
+                        <option value='Islam<'>Belum Kawin</option>
+                        <option value='Kristen'>Kawin</option>
+                    </select>
+                </label>
+                <label className="form-control w-full max-w-lg">
+                    <div className="label">
+                        <span className="label-text">Pekerjaan</span>
                     </div>
                     <input
-                        value={tempatLahir}
-                        onChange={(e) => setTempatLahir(e.target.value)}
+                        value={pekerjaan}
+                        onChange={(e) => setPekerjaan(e.target.value)}
                         type="text"
                         placeholder="Ketik disini"
                         className="input input-bordered w-full"
                     />
                 </label>
-                <label className="form-control w-full">
+                <label className="form-control w-full max-w-lg">
                     <div className="label">
-                        <span className="label-text">Tanggal Lahir</span>
+                        <span className="label-text">Kewarganegaraan</span>
+                    </div>
+                    <select className="select select-bordered" value={kewarganegaraan} onChange={(e) => setKewarganegaraan(e.target.value)}>
+                        <option disabled value='-'>Pilih satu</option>
+                        <option value='Islam'>WNI</option>
+                        <option value='Kristen'>WNA</option>
+                        <option value='Katolik'>ITAP</option>
+                    </select>
+                </label>
+                <label className="form-control w-full max-w-lg">
+                    <div className="label">
+                        <span className="label-text">Berlaku Hingga</span>
                     </div>
                     <input
-                        value={tanggalLahir}
-                        onChange={(e) => setTanggalLahir(e.target.value)}
+                        value={berlakuHingga}
+                        onChange={(e) => setBerlakuHingga(e.target.value)}
                         type="date"
                         className="input input-bordered w-full"
                     />
                 </label>
-            </div>
-            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-                <label className="form-control w-full">
-                    <div className="label">
-                        <span className="label-text">Jenis Kelamin</span>
-                    </div>
-                    <select className="select select-bordered" value={jenisKelamin} onChange={(e) => setJenisKelamin(e.target.value)}>
-                        <option disabled value='-'>Pilih satu</option>
-                        <option value='Laki-laki'>Laki-laki</option>
-                        <option value='Perempuan'>Perempuan</option>
-                    </select>
-                </label>
-                <label className="form-control w-full">
-                    <div className="label">
-                        <span className="label-text">Gol Darah</span>
-                    </div>
-                    <select className="select select-bordered" value={golonganDarah} onChange={(e) => setGolonganDarah(e.target.value)}>
-                        <option disabled value='-'>Pilih satu</option>
-                        <option value='A'>A</option>
-                        <option value='B'>B</option>
-                        <option value='AB'>AB</option>
-                        <option value='O'>O</option>
-                    </select>
-                </label>
-            </div>
-            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-                <label className="form-control w-full flex-1">
-                    <div className="label">
-                        <span className="label-text">Alamat</span>
-                    </div>
-                    <input
-                        value={alamat}
-                        onChange={(e) => setAlamat(e.target.value)}
-                        type="text"
-                        placeholder="Ketik disini"
-                        className="input input-bordered w-full"
-                    />
-                </label>
-                <div className="flex gap-2 max-w-lg flex-1">
-                    <label className="form-control w-full">
-                        <div className="label">
-                            <span className="label-text">RT</span>
-                        </div>
-                        <input
-                            value={rt}
-                            onChange={(e) => setRt(e.target.value)}
-                            type="number"
-                            placeholder="Ketik disini"
-                            className="input input-bordered w-full"
-                        />
-                    </label>
-                    <label className="form-control w-full">
-                        <div className="label">
-                            <span className="label-text">RW</span>
-                        </div>
-                        <input
-                            value={rw}
-                            onChange={(e) => setRw(e.target.value)}
-                            type="number"
-                            placeholder="Ketik disini"
-                            className="input input-bordered w-full"
-                        />
-                    </label>
-                </div>
-            </div>
-            <div className="flex gap-2 max-w-lg w-full max-w-lg sm:flex-row flex-col">
-                <label className="form-control w-full">
-                    <div className="label">
-                        <span className="label-text">Kel/Desa</span>
-                    </div>
-                    <input
-                        value={kelurahanDesa}
-                        onChange={(e) => setKelurahanDesa(e.target.value)}
-                        type="text"
-                        placeholder="Ketik disini"
-                        className="input input-bordered w-full"
-                    />
-                </label>
-                <label className="form-control w-full">
-                    <div className="label">
-                        <span className="label-text">Kecamatan</span>
-                    </div>
-                    <input
-                        value={kecamatan}
-                        onChange={(e) => setKecamatan(e.target.value)}
-                        type="text"
-                        placeholder="Ketik disini"
-                        className="input input-bordered w-full"
-                    />
-                </label>
-            </div>
-            <label className="form-control w-full max-w-lg">
-                <div className="label">
-                    <span className="label-text">Agama</span>
-                </div>
-                <select className="select select-bordered" value={agama} onChange={(e) => setAgama(e.target.value)}>
-                    <option disabled value='-'>Pilih satu</option>
-                    <option value='Islam<'>Islam</option>
-                    <option value='Kristen'>Kristen</option>
-                    <option value='Katolik'>Katolik</option>
-                    <option value='Hindu<'>Hindu</option>
-                    <option value='Buddha'>Buddha</option>
-                    <option value='Khonghucu'>Khonghucu</option>
-                </select>
-            </label>
-            <label className="form-control w-full max-w-lg">
-                <div className="label">
-                    <span className="label-text">Status perkawinan</span>
-                </div>
-                <select className="select select-bordered" value={statusPerkawinan} onChange={(e) => setStatusPerkawinan(e.target.value)}>
-                    <option disabled value='-'>Pilih satu</option>
-                    <option value='Islam<'>Belum Kawin</option>
-                    <option value='Kristen'>Kawin</option>
-                </select>
-            </label>
-            <label className="form-control w-full max-w-lg">
-                <div className="label">
-                    <span className="label-text">Pekerjaan</span>
-                </div>
-                <input
-                    value={pekerjaan}
-                    onChange={(e) => setPekerjaan(e.target.value)}
-                    type="text"
-                    placeholder="Ketik disini"
-                    className="input input-bordered w-full"
-                />
-            </label>
-            <label className="form-control w-full max-w-lg">
-                <div className="label">
-                    <span className="label-text">Kewarganegaraan</span>
-                </div>
-                <select className="select select-bordered" value={kewarganegaraan} onChange={(e) => setKewarganegaraan(e.target.value)}>
-                    <option disabled value='-'>Pilih satu</option>
-                    <option value='Islam'>WNI</option>
-                    <option value='Kristen'>WNA</option>
-                    <option value='Katolik'>ITAP</option>
-                </select>
-            </label>
-            <label className="form-control w-full max-w-lg">
-                <div className="label">
-                    <span className="label-text">Berlaku Hingga</span>
-                </div>
-                <input
-                    value={berlakuHingga}
-                    onChange={(e) => setBerlakuHingga(e.target.value)}
-                    type="date"
-                    className="input input-bordered w-full"
-                />
-            </label>
+            </>}
             {user && user.pathFileKtp ? <div className="p-2 pb-4 rounded shadow bg-base-200 flex flex-col gap-2 w-full max-w-lg">
                     {user.typeFileKtp === 'image' && <img src={bucketUrl + user.pathFileKtp} alt="foto ktp pengguna" className={`w-full ${file && 'blur-sm'}`}/>}
                     {user.typeFileKtp === 'document' && <iframe src={bucketUrl + user.pathFileKtp} width="100%" title="user pdf" className={`${file && 'blur-sm'}`}/>}
@@ -521,7 +545,7 @@ export default function Form() {
                 </div>
             </>
             }
-            <div className="flex w-full max-w-lg gap-2 items-center">
+            {/* <div className="flex w-full max-w-lg gap-2 items-center">
                 <label className="form-control w-full max-w-lg">
                     <div className="label">
                         <span className="label-text">Tambahkan pengelola</span>
@@ -532,7 +556,19 @@ export default function Form() {
                     </select>
                 </label>
                 {fetchAdminsError && <div className="btn btn-primary text-primary-content text-xl tooltip grid place-items-center" data-tip="Segarkan" onClick={fetchAdmins}><MdRefresh/></div>}
-            </div>
+            </div> */}
+            <label className="form-control w-full max-w-lg">
+                <div className="label">
+                    <span className="label-text">Tambahkan Simpul Pengelola</span>
+                </div>
+                <input
+                    value={simpul}
+                    onChange={(e) => setSimpul(e.target.value)}
+                    type="text"
+                    placeholder="Ketik disini"
+                    className="input input-bordered w-full"
+                />
+            </label>
             <div className="flex gap-2 max-w-md w-full  mt-4">
                 {user && <span className={`btn btn-secondary`} onClick={handleCancelEdit}>Batalkan</span>} 
                 {isloading ? <span className={`btn ${user ? 'btn-primary' : 'btn-accent'} flex-1`}>Loading</span> : <button className={`btn ${user ? 'btn-primary' : 'btn-accent'} flex-1`}>{user? 'Simpan' : 'Tambah'}</button>}
