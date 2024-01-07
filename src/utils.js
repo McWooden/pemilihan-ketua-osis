@@ -30,6 +30,9 @@ export function verifyAdmin(data) {
 export function setLocalStorage(name, value) {
   return localStorage.setItem(name, JSON.stringify(value))
 }
-export function getLocalStorage(name) {
+export function getParseLocalStorage(name) {
   return JSON.parse(localStorage.getItem(name))
+}
+export function getLocalStorage(name) {
+  return localStorage.getItem(name)
 }
