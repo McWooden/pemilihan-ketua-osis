@@ -1,16 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getLocalStorage } from "../utils";
 
 const source = createSlice({
     name: "source",
     initialState: {
-        account: getLocalStorage("account") || {},
+        account: null,
         users: null,
         admins: null,
     },
     reducers: {
         setAccount: (state, action) => {
-            state.account = action?.payload || getLocalStorage("account")
+            state.account = action?.payload || null
         },
         setUsers: (state, action) => {
             state.users = action?.payload || null;

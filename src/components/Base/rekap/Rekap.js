@@ -13,6 +13,8 @@ import { formatDate } from "../../../utils";
 import xlsx from "json-as-xlsx";
 
 export default function Rekap() {
+    const account = useSelector(state => state.source.account)
+    const [showAll, setShowAll] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const users = useSelector(state => state.source.users)
     const [fetchError, setFetchError] = useState(false)
@@ -37,7 +39,7 @@ export default function Rekap() {
         if (!users) fetchUsers()
     },[fetchUsers, users])
 
-    function handleDownload() {
+    function handleDownload(all = true) {
         const columns = [
             { label: "id", value: "id" },
             { label: "nik", value: (row) => row.nik },
@@ -63,11 +65,11 @@ export default function Rekap() {
         const data = [{
             sheet: 'pengguna',
             columns,
-            content: users
+            content: users?.filter(item => item.simpul === account?.username || all) || []
         }]
 
         let settings = {
-            fileName: `Rekap-data-pemilih-${+new Date()}`,
+            fileName: `Rekap-${all ? 'semua' : 'simpul-' + account?.username }-data-pemilih-${+new Date()}`,
             extraLength: 3,
         }
         xlsx(data, settings)
@@ -80,9 +82,9 @@ export default function Rekap() {
                 <div className="stat-figure text-primary">
                     <FaRegAddressCard className="text-5xl"/>
                 </div>
-                <div className="stat-title">Total Ktp</div>
+                <div className="stat-title">Simpul saya</div>
                 <div className="stat-value text-primary">
-                    {users && users.length}
+                    {users && users.filter(item => item.simpul === account.username).length + '/' + users.length}
                     {fetchError && <span className="bg-error px-2">Err</span>}
                 </div>
                 <div className="stat-desc flex gap-2">
@@ -90,15 +92,23 @@ export default function Rekap() {
                         {isLoading ? <AiOutlineLoading3Quarters className='text-2xl animate-spin'/> : <HiRefresh className='text-2xl'/>}
                         Segarkan
                     </button>
+                    <button className="btn btn-outline btn-primary flex items-center gap-2" onClick={() => handleDownload(false)}>
+                        <PiMicrosoftExcelLogo className="text-2xl"/>
+                        Unduh Simpul Saya
+                    </button>
                     <button className="btn btn-outline btn-primary flex items-center gap-2" onClick={handleDownload}>
                         <PiMicrosoftExcelLogo className="text-2xl"/>
-                        Download
+                        Unduh Semua
                     </button>
                 </div>
             </div>
         </div>
         <SearchAndPlusButton/>
         {fetchError && <AlertError text="Kesalahan!, gagal mendapatkan data, klik untuk menyegarkan" className="btn bg-error justify-start h-auto" cb={fetchUsers}/>}
-        <TableData users={users} className={'flex-1'}/>
+        <label className="flex self-end gap-2 btn p-2 rounded w-fit">
+            <input type="checkbox" className="checkbox" onChange={e => setShowAll(e.target.checked)}/>
+            <span>Tampikan semua</span>
+        </label>
+        <TableData users={users?.filter(item => item.simpul === account.username || showAll)} className={'flex-1'}/>
     </div>
 }

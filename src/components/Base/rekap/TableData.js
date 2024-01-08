@@ -9,7 +9,6 @@ export default function TableData({users, className}) {
         setDetailUser(data)
         document.getElementById('modalToDisplayUser').showModal()
     }
-
     return <div className={`overflow-x-auto ${className}`}>
         <table className='table'>
             <thead>
@@ -32,6 +31,8 @@ export default function TableData({users, className}) {
                     <th>Berlaku Hingga</th>
                     <th>Jalur File</th>
                     <th>Tipe File</th>
+                    <th>pengelolaId</th>
+                    <th>Simpul</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,6 +56,8 @@ export default function TableData({users, className}) {
                         <td>{formatDate(user?.berlakuHingga)}</td>
                         <td>{user?.pathFileKtp}</td>
                         <td>{user?.typeFileKtp}</td>
+                        <td>{user?.pengelolaId}</td>
+                        <td>{user?.simpul}</td>
                     </tr>
                 )) || []}
             </tbody>

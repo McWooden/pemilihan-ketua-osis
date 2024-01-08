@@ -1,7 +1,7 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import Dashboard from './dashboard/Dashboard'
-import { useEffect } from 'react'
-import { useSelector } from 'react-redux'
+import { useCallback, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import Rekap from './rekap/Rekap'
 import Cari from './cari/Cari'
 import Admin from './admin/Admin'
@@ -15,18 +15,31 @@ export default function Base() {
     const navigate = useNavigate()
     const location = useLocation()
 
-    useEffect(() => {
-        supabase.auth.onAuthStateChange((event, session) => {
-            setAccount(session?.user ?? null)
-            if (event === 'SIGNED_OUT') {
-                navigate('/login')
-            }
-        })
-    }, [navigate])
+    const dispatch = useDispatch()
 
-    if (!account) {
-        return navigate('/login')
-    }
+    const setAdminAccount = useCallback(async (user) => {
+        const {data, error} = await supabase.from('admins').select('id, username').eq('id', user?.id).single()
+        if (data) {
+            dispatch(setAccount(data))
+        }
+        if (error) {
+            return navigate('/login?msg=error&code'+error.code)
+        }
+        return data
+    }, [dispatch, navigate])
+    
+
+    useEffect(() => {
+        const handleAuthStateChange = async (event, session) => {
+            if (event === 'SIGNED_OUT' || !session?.user) {
+                navigate('/login')
+                setAccount(null)
+            } else if (event === 'SIGNED_IN') {
+                setAdminAccount(session?.user)
+            }
+        }
+        supabase.auth.onAuthStateChange(handleAuthStateChange)
+    }, [account, navigate, setAdminAccount])
 
     const drawerList = ['dashboard', 'cari', 'form', 'rekap', 'admin']
 
@@ -42,8 +55,11 @@ export default function Base() {
                     <div className="flex-1">
                         <p className="text-md">Caleg Perindo</p>
                     </div>
-                    <div className="navbar-end" onClick={() => supabase.auth.signOut()}>
-                        <p className="btn">Logout</p>
+                    <div className="navbar-end">
+                        <p className="btn" onClick={() => {
+                            supabase.auth.signOut()
+                            setAccount(null)
+                        }}>Logout</p>
                     </div>
                 </div>
                 <div className='flex-1 p-4 overflow-auto'>
@@ -71,6 +87,10 @@ export default function Base() {
                             }} className={`capitalize ${((location.pathname === '/' + list) || (location.pathname === '/' && list === 'dashboard')) && 'active'}`}>{list}</p></li>
                         ))}
                     </ul>
+                    <div className='flex flex-col mt-auto bg-neutral text-neutral-content p-2 rounded'>
+                        <p>{account?.username || 'username'}</p>
+                        <p>{account?.id || 'id'}</p>
+                    </div>
                 </div>
             </div>
         </div>

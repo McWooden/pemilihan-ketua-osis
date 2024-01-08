@@ -1,18 +1,33 @@
 // import { setLocalStorage } from "../../utils"
 // import { setAccount } from "../../redux/source"
 import { useNavigate } from "react-router-dom"
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import supabase from '../../config/supabaseClient'
+import { setAccount } from "../../redux/source"
+import { useDispatch, useSelector } from "react-redux"
 
 export default function Login() {
     // const [username, setUsername] = useState('')
+    const account = useSelector(state => state.source.account)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showTextError, setShowTextError] = useState('')
     const [isLoading, setIsLoading] = useState(false)
 
-    // const dispatch = useDispatch()
+    const dispatch = useDispatch()
     const navigate = useNavigate()
+
+    const setAdminAccount = useCallback(async (user) => {
+        const {data, error} = await supabase.from('admins').select('id, username').eq('id', user?.id).single()
+        if (data) {
+            dispatch(setAccount(data))
+            return
+        }
+        if (error) {
+            console.log(error)
+            navigate(`/login?msg=error&code=${error.code}`)
+        }
+    }, [dispatch, navigate])
 
     async function handleSupabaseLogin(e) {
         e.preventDefault()
@@ -21,14 +36,15 @@ export default function Login() {
             email: email,
             password: password,
         })
-        if (error) console.log(error)
-        if (data) {
-            navigate('/')
+        if (error) {
+            setIsLoading(false)
+            return console.log(error)
         }
-        if (data || error) {
+        if (data) {
+            if (!account) await setAdminAccount(data.user)
+            navigate('/')
             setIsLoading(false)
         }
-        console.log(data)
     }
     // async function LoginToMyAccount(e) {
     //     e.preventDefault()
